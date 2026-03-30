@@ -61,7 +61,9 @@ const getMe = async (req, res) => {
                     as: 'department',
                     attributes: ['id', 'name'] // Lấy thêm thông tin phòng ban
                 }
-            ]
+            ],
+            raw: true,  // Trả về object thuần, bỏ qua bước build Model Instance
+            nest: true  // Gộp các object include lại cho gọn gàng
         });
 
         if (!user) {

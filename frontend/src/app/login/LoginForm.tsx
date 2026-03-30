@@ -29,7 +29,7 @@ export default function LoginForm() {
       }
 
       // Handle successful login
-      localStorage.setItem('token', data.token); // Adjust based on your backend response
+      localStorage.setItem('token', data.data.token); // Adjust based on your backend response
       window.location.href = '/dashboard'; // Redirect to dashboard or home
 
     } catch (err: any) {

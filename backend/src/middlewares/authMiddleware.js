@@ -42,6 +42,18 @@ const verifyToken = async (req, res, next) => {
     }
 };
 
+const verifyAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'ADMIN') {
+        next();
+    } else {
+        return res.status(403).json({
+            success: false,
+            message: 'Yêu cầu quyền Admin để thực hiện thao tác này!'
+        });
+    }
+};
+
 module.exports = {
-    verifyToken
+    verifyToken,
+    verifyAdmin
 };
