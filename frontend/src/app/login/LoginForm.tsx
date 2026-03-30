@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
+  const [employee_code, setEmployeeCode] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,7 +19,7 @@ export default function LoginForm() {
       const response = await fetch('http://localhost:8000/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ employee_code, password }),
       });
 
       const data = await response.json();
@@ -47,21 +47,21 @@ export default function LoginForm() {
         </div>
       )}
       <div className="space-y-2 text-left">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="email">
-          Email Address
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="employee_code">
+          Employee Code
         </label>
         <div className="relative group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-gray-400">
             <Mail className="h-5 w-5" />
           </div>
           <input
-            id="email"
-            type="email"
+            id="employee_code"
+            type="text"
             required
             className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white sm:text-sm transition-all outline-none"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your employee code"
+            value={employee_code}
+            onChange={(e) => setEmployeeCode(e.target.value)}
           />
         </div>
       </div>
