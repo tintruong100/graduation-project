@@ -1,8 +1,6 @@
 import LoginForm from './LoginForm';
 import { Metadata } from 'next';
 
-
-
 export const metadata: Metadata = {
   title: 'Login',
   description: 'Sign in to access your dashboard',

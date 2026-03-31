@@ -23,6 +23,14 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
+  //Giữ vị trí của Sidebar
+  useEffect(() => {
+    const savedMenu = localStorage.getItem("mainActiveMenu");
+    if (savedMenu) {
+      setActiveMenu(savedMenu);
+    }
+  }, []);
+
   // Layout states
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeMenu, setActiveMenu] = useState("profile");
@@ -112,7 +120,10 @@ export default function DashboardPage() {
               {menuItems.map(item => (
                 <li key={item.id}>
                   <button
-                    onClick={() => setActiveMenu(item.id)}
+                    onClick={() => {
+                      setActiveMenu(item.id); // Đổi giao diện
+                      localStorage.setItem("mainActiveMenu", item.id); // Lưu bộ nhớ
+                    }}
                     className={`w-full flex items-center p-3 font-bold rounded-xl transition-all ${activeMenu === item.id
                       ? "bg-blue-600 text-white shadow-md font-bold"
                       : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
