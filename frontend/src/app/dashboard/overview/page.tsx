@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "@/utils/api";
+import ComingSoon from "@/components/coming-soon/ComingSoon";
 
-import EmployeeMgmt from "@/components/dashboard/employees/EmployeeMgmt";
-
-export default function EmployeesPage() {
+export default function OverviewPage() {
     const router = useRouter();
 
     useEffect(() => {
-        document.title = "Quản lý Nhân viên | HRM System";
+        document.title = "Tổng quan | HRM System";
         const verifyAndLoad = () => {
             try {
                 const token = localStorage.getItem("token");
@@ -21,7 +19,7 @@ export default function EmployeesPage() {
                 const base64Url = token.split('.')[1];
                 const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                 const payload = JSON.parse(window.atob(base64));
-                if (payload.role !== "ADMIN" && payload.role !== "MANAGER") {
+                if (payload.role !== "ADMIN") {
                     router.push("/dashboard/profile");
                     return;
                 }
@@ -36,8 +34,9 @@ export default function EmployeesPage() {
 
     // 4. Chỉ render nội dung nếu là Admin
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <EmployeeMgmt />
-        </div>
+        <ComingSoon
+            title="Tổng quan đang phát triển..."
+            description="Các biểu đồ và thống kê tổng quan sẽ sớm có mặt tại đây!"
+        />
     );
 }

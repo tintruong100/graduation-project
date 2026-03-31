@@ -24,7 +24,7 @@ const login = async (req, res) => {
 
         // TỐI ƯU: Đưa id (UUID) vào token thay vì employee_code
         const token = jwt.sign(
-            { id: user.id, role: user.role },
+            { id: user.id, department_id: user.department_id, role: user.role },
             process.env.JWT_SECRET || 'fallback_secret_key',
             { expiresIn: '1d' }
         );

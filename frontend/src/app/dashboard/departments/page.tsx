@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "@/utils/api";
 
@@ -13,22 +13,23 @@ export default function DepartmentsPage() {
     useEffect(() => {
         document.title = "Quản lý Phòng ban | HRM System";
 
-        const verifyAndLoad = async () => {
+        const verifyAndLoad = () => {
             try {
-                const res = await fetchWithAuth("/auth/me");
-                if (res.ok) {
-                    const data = await res.json();
-                    const user = data.data;
-                    if (user.role !== "ADMIN") {
-                        router.push("/dashboard/profile");
-                        return;
-                    }
-                } else {
-                    localStorage.removeItem("token");
+                const token = localStorage.getItem("token");
+                if (!token) {
                     router.push("/login");
+                    return;
+                }
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const payload = JSON.parse(window.atob(base64));
+                if (payload.role !== "ADMIN") {
+                    router.push("/dashboard/profile");
+                    return;
                 }
             } catch (err) {
-                console.error("Lỗi xác thực:", err);
+                console.error("Token không hợp lệ hoặc đã bị sửa đổi:", err);
+                localStorage.removeItem("token");
                 router.push("/login");
             }
         };

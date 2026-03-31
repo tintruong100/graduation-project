@@ -67,7 +67,9 @@ export default function profile({ user }: { user: any }) {
         <div className="grid grid-cols-3 pb-2 items-center">
           <span className="text-gray-500 font-medium">Vai trò:</span>
           <span className="col-span-2">
-            <span className={`${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : user.role === 'MANAGER' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'} px-3 py-1 rounded-full text-xs font-bold uppercase`}>
+            <span className={`px-2.5 py-0.5 rounded-full font-bold ${user.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
+              user.role === 'MANAGER' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+              }`}>
               {user.role}
             </span>
           </span>

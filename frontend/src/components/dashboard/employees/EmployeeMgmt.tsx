@@ -55,14 +55,37 @@ export default function EmployeeMgmt() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [empRes, deptRes] = await Promise.all([
-        fetchWithAuth("/employees"),
-        fetchWithAuth("/departments")
-      ]);
-      if (empRes.ok) setEmployees((await empRes.json()).data || []);
-      if (deptRes.ok) setDepartments((await deptRes.json()).data || []);
+      // 1. Lấy token từ localStorage
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Không tìm thấy token");
+
+      // 2. Giải mã Payload của JWT để lấy thông tin (phần nằm giữa 2 dấu chấm)
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(base64));
+
+      // 3. Phân quyền gọi API trực tiếp từ data trong Token
+      if (payload.role === "ADMIN") {
+        const [empRes, deptRes] = await Promise.all([
+          fetchWithAuth("/employees"),
+          fetchWithAuth("/departments")
+        ]);
+
+        if (empRes.ok) setEmployees((await empRes.json()).data || []);
+        if (deptRes.ok) setDepartments((await deptRes.json()).data || []);
+
+      } else if (payload.role === "MANAGER") {
+        // Đảm bảo trong Token của bạn khi sign ở Backend đã có chứa trường department_id
+        const empRes = await fetchWithAuth(`/employees/${payload.department_id}`);
+
+        if (empRes.ok) setEmployees((await empRes.json()).data || []);;
+      }
+
     } catch (e) {
-      console.error("Lỗi tải dữ liệu:", e);
+      console.error("Lỗi tải dữ liệu hoặc giải mã token:", e);
+      // Nếu lỗi token thì reset mảng để không sập UI
+      setEmployees([]);
+      setDepartments([]);
     } finally {
       setLoading(false);
     }

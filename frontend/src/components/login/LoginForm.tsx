@@ -10,7 +10,7 @@ export default function LoginForm() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      router.push("/dashboard");
+      router.push("/dashboard/profile");
     }
   }, [router]);
 

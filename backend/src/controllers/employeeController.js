@@ -20,6 +20,26 @@ const getAllEmployees = async (req, res) => {
     }
 };
 
+const getAllEmployeesByDepartment = async (req, res) => {
+    try {
+        const { department_id } = req.params;
+        const employees = await db.Employee.findAll({
+            where: { department_id: department_id },
+            attributes: { exclude: ['password_hash'] },
+            include: [{ model: db.Department, as: 'department', attributes: ['id', 'name'] }],
+            order: [
+                ['employee_code', 'ASC'] // Sắp xếp theo cột employee_code tăng dần
+                // Nếu muốn mới nhất lên đầu thì đổi 'ASC' thành 'DESC'
+            ],
+            raw: true,
+            nest: true
+        });
+        return res.status(200).json({ success: true, data: employees });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi server!', error: error.message });
+    }
+};
+
 const { Op } = require('sequelize');
 
 // 1. Hàm helper: Xóa dấu tiếng Việt
@@ -161,4 +181,4 @@ const deleteEmployee = async (req, res) => {
     }
 };
 
-export default { getAllEmployees, createEmployee, updateEmployee, deleteEmployee };
+export default { getAllEmployees, createEmployee, updateEmployee, deleteEmployee, getAllEmployeesByDepartment };

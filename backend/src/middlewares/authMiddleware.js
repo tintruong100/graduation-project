@@ -43,7 +43,7 @@ const verifyToken = async (req, res, next) => {
 };
 
 const verifyAdmin = (req, res, next) => {
-    if (req.user && req.user.role === 'ADMIN') {
+    if (req.user && (req.user.role === 'ADMIN')) {
         next();
     } else {
         return res.status(403).json({
@@ -53,7 +53,19 @@ const verifyAdmin = (req, res, next) => {
     }
 };
 
+const verifyManager = (req, res, next) => {
+    if (req.user && (req.user.role === 'MANAGER')) {
+        next();
+    } else {
+        return res.status(403).json({
+            success: false,
+            message: 'Yêu cầu quyền Manager để thực hiện thao tác này!'
+        });
+    }
+};
+
 module.exports = {
     verifyToken,
-    verifyAdmin
+    verifyAdmin,
+    verifyManager
 };

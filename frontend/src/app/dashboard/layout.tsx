@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { fetchWithAuth } from "@/utils/api";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPeopleGroup, faBuilding, faUser, faBars, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faPeopleGroup, faBuilding, faUser, faBars, faXmark, faMagnifyingGlassChart, faCalendarCheck, faClipboardUser, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 const ChevronLeftIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
@@ -66,14 +66,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         );
     }
 
-    const menuItems = [
-        { id: "profile", label: "Thông tin cá nhân", path: "/dashboard/profile", icon: <FontAwesomeIcon icon={faUser} /> },
-    ];
+    const menuItems = [];
 
+    // 1. THÔNG TIN CÁ NHÂN (Ai cũng thấy, để trên cùng)
+    menuItems.push(
+        { id: "profile", label: "Thông tin cá nhân", path: "/dashboard/profile", icon: <FontAwesomeIcon icon={faUser} /> }
+    );
+
+    // 2. DÀNH RIÊNG CHO ADMIN
     if (user?.role === "ADMIN") {
         menuItems.push(
-            { id: "departments", label: "Phòng ban", path: "/dashboard/departments", icon: <FontAwesomeIcon icon={faBuilding} /> },
-            { id: "employees", label: "Nhân viên", path: "/dashboard/employees", icon: <FontAwesomeIcon icon={faPeopleGroup} /> },
+            { id: "overview", label: "Tổng quan", path: "/dashboard/overview", icon: <FontAwesomeIcon icon={faMagnifyingGlassChart} /> },
+            { id: "departments", label: "Phòng ban", path: "/dashboard/departments", icon: <FontAwesomeIcon icon={faBuilding} /> }
+        );
+    }
+
+    // 3. DÀNH CHO ADMIN VÀ MANAGER 
+    if (user?.role === "ADMIN" || user?.role === "MANAGER") {
+        menuItems.push(
+            { id: "employees", label: "Nhân viên", path: "/dashboard/employees", icon: <FontAwesomeIcon icon={faPeopleGroup} /> }
+        );
+    }
+
+    // 4. CÁC MỤC CHUNG AI CŨNG THẤY (Chấm công)
+    menuItems.push(
+        { id: "attendance-report", label: "Báo cáo chấm công", path: "/dashboard/attendance-report", icon: <FontAwesomeIcon icon={faClipboardUser} /> }
+    );
+
+    // 5. LỊCH SỬ QUÉT (Chỉ dành riêng cho ADMIN) - MỚI THÊM
+    if (user?.role === "ADMIN") {
+        menuItems.push(
+            { id: "scan-history", label: "Lịch sử quét", path: "/dashboard/scan-history", icon: <FontAwesomeIcon icon={faClockRotateLeft} /> }
+        );
+    }
+
+    // 5. MỤC NGHỈ PHÉP (Thay đổi tên gọi tùy theo quyền)
+    if (user?.role === "ADMIN" || user?.role === "MANAGER") {
+        // Trưởng phòng & Admin thì hiển thị chữ "Quản lý Đơn từ"
+        menuItems.push(
+            { id: "leave-ot-manage", label: "Quản lý Đơn từ", path: "/dashboard/leave-ot", icon: <FontAwesomeIcon icon={faCalendarCheck} /> }
+        );
+    } else {
+        // Nhân viên bình thường thì hiển thị chữ "Nghỉ phép & Tăng ca"
+        menuItems.push(
+            { id: "leave-ot-request", label: "Nghỉ phép & Tăng ca", path: "/dashboard/leave-ot", icon: <FontAwesomeIcon icon={faCalendarCheck} /> }
         );
     }
 
@@ -101,7 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div className="flex items-center gap-3 md:gap-6">
                         <div className="hidden sm:flex flex-col text-right">
                             <span className="text-gray-800 font-semibold text-sm">{user?.full_name}</span>
-                            <span className={`text-xs font-bold ${user?.role === 'ADMIN' ? 'text-purple-600' : 'text-green-600'}`}>{user?.role}</span>
+                            <span className={`text-xs font-bold ${user?.role === 'ADMIN' ? 'text-red-700' : user?.role === 'MANAGER' ? 'text-blue-700' : 'text-gray-700'}`}>{user?.role}</span>
                         </div>
                         <button onClick={handleLogout} className="bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-3 md:px-4 rounded-lg transition-colors text-sm border border-red-200">
                             Đăng xuất
