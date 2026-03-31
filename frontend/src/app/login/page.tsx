@@ -16,29 +16,21 @@ export default function LoginPage() {
       <div className="max-w-md w-full mx-auto p-4 z-10 w-full">
         {/* Main Card */}
         <div className="bg-white/70 dark:bg-gray-900/40 backdrop-blur-2xl shadow-2xl rounded-[2rem] p-8 md:p-10 border border-white/50 dark:border-white/10 relative overflow-hidden">
-          
+
           {/* Subtle glossy top inner highlight */}
           <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent" />
-          
+
           <div className="text-center mb-10 mt-2">
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 mb-3">
-              Welcome Back
+            <img src="./img/logo-iuh.png" alt="Logo" className="mx-auto h-16 w-auto mb-10" />
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 mb-3">
+              HRM System
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 font-medium">
-              Please enter your details to sign in.
-            </p>
           </div>
-          
+
           <LoginForm />
-          
-          <p className="mt-10 text-center text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
-            <a href="#" className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-              Sign up
-            </a>
-          </p>
+
         </div>
-        
+
         {/* Footer info snippet or logo can go here */}
         <div className="text-center mt-8 text-xs text-gray-400 dark:text-gray-500">
           &copy; {new Date().getFullYear()} Graduation Project. All rights reserved.

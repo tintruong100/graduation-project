@@ -48,7 +48,7 @@ export default function LoginForm() {
       )}
       <div className="space-y-2 text-left">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="employee_code">
-          Employee Code
+          Mã nhân viên
         </label>
         <div className="relative group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-gray-400">
@@ -59,7 +59,7 @@ export default function LoginForm() {
             type="text"
             required
             className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white sm:text-sm transition-all outline-none"
-            placeholder="Enter your employee code"
+            placeholder="Nhập mã nhân viên của bạn"
             value={employee_code}
             onChange={(e) => setEmployeeCode(e.target.value)}
           />
@@ -68,7 +68,7 @@ export default function LoginForm() {
 
       <div className="space-y-2 text-left">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="password">
-          Password
+          Mật khẩu
         </label>
         <div className="relative group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-gray-400">
@@ -86,26 +86,6 @@ export default function LoginForm() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <input
-            id="remember-me"
-            name="remember-me"
-            type="checkbox"
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded custom-checkbox outline-none"
-          />
-          <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-            Remember me
-          </label>
-        </div>
-
-        <div className="text-sm">
-          <a href="#" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-            Forgot password?
-          </a>
-        </div>
-      </div>
-
       <button
         type="submit"
         disabled={isLoading}
@@ -115,7 +95,7 @@ export default function LoginForm() {
           <Loader2 className="w-5 h-5 animate-spin" />
         ) : (
           <span className="flex items-center">
-            Sign In
+            Đăng nhập
             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </span>
         )}
