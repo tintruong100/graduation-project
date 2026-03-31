@@ -29,7 +29,7 @@ export default function EmployeeDashboard({ user }: { user: any }) {
         <div className="grid grid-cols-3 pb-2 items-center">
           <span className="text-gray-500 font-medium">Vai trò:</span>
           <span className="col-span-2">
-            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
+            <span className={`${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : user.role === 'MANAGER' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'} px-3 py-1 rounded-full text-xs font-bold uppercase`}>
               {user.role}
             </span>
           </span>

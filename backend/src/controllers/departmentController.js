@@ -6,6 +6,10 @@ const getAllDepartments = async (req, res) => {
             include: [
                 { model: db.Employee, as: 'manager', attributes: ['id', 'full_name', 'employee_code'] }
             ],
+            order: [
+                ['createdAt', 'ASC'] // Sắp xếp theo cột createdAt tăng dần (Cũ nhất lên đầu)
+                // Nếu muốn mới nhất lên đầu thì đổi 'ASC' thành 'DESC'
+            ],
             raw: true,
             nest: true
         });
@@ -62,8 +66,21 @@ const updateDepartment = async (req, res) => {
 const deleteDepartment = async (req, res) => {
     try {
         const { id } = req.params;
-        const dept = await db.Department.findByPk(id);
+        const dept = await db.Department.findByPk(id, {
+            raw: false
+        });
         if (!dept) return res.status(404).json({ success: false, message: 'Không tìm thấy phòng ban!' });
+
+        const employeeCount = await db.Employee.count({
+            where: { department_id: id }
+        });
+
+        if (employeeCount > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Không thể xóa! Hiện đang có ${employeeCount} nhân viên thuộc phòng ban này. Vui lòng thuyên chuyển nhân viên trước.`
+            });
+        }
 
         await dept.destroy();
         return res.status(200).json({ success: true, message: 'Xóa phòng ban thành công!' });

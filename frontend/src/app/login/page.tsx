@@ -1,12 +1,15 @@
 import LoginForm from './LoginForm';
 import { Metadata } from 'next';
 
+
+
 export const metadata: Metadata = {
   title: 'Login',
   description: 'Sign in to access your dashboard',
 };
 
 export default function LoginPage() {
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a0a0a] relative overflow-hidden selection:bg-blue-500/30">
       {/* Decorative gradient glowing orbs */}

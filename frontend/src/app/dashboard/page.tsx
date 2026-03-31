@@ -74,8 +74,8 @@ export default function DashboardPage() {
 
   if (user?.role === "ADMIN") {
     menuItems.push(
+      { id: "departments", label: "Phòng ban", icon: <FontAwesomeIcon icon={faBuilding} /> },
       { id: "employees", label: "Nhân viên", icon: <FontAwesomeIcon icon={faPeopleGroup} /> },
-      { id: "departments", label: "Phòng ban", icon: <FontAwesomeIcon icon={faBuilding} /> }
     );
   }
 

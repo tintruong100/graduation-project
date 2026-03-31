@@ -42,10 +42,12 @@ export default function DepartmentMgmt() {
     if (!confirm("Bạn có chắc muốn xoá phòng ban này? Các nhân viên trực thuộc có thể bị ảnh hưởng.")) return;
     try {
       const res = await fetchWithAuth(`/departments/${id}`, { method: "DELETE" });
+      const body = await res.json();
       if (res.ok) {
+        alert(body.message || "Xoá phòng ban thành công");
         loadData();
       } else {
-        alert("Có lỗi xảy ra khi xoá.");
+        alert(res.status === 400 ? body.message : "Có lỗi xảy ra");
       }
     } catch (e) {
       console.error(e);

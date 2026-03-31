@@ -7,6 +7,10 @@ export default function EmployeeMgmt() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // State cho ô tìm kiếm chữ và lọc theo phòng ban
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDept, setFilterDept] = useState("");
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -110,13 +114,67 @@ export default function EmployeeMgmt() {
     }
   };
 
+  // Lọc kép: Theo tên/mã NV VÀ Theo phòng ban
+  const filteredEmployees = employees.filter((emp: any) => {
+    // 1. Kiểm tra điều kiện tìm kiếm chữ
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch =
+      emp.full_name?.toLowerCase().includes(searchLower) ||
+      emp.employee_code?.toLowerCase().includes(searchLower);
+
+    // 2. Kiểm tra điều kiện phòng ban (Nếu filterDept rỗng "" thì coi như đúng hết)
+    // Lưu ý: Kiểm tra xem ID phòng ban của nhân viên có khớp với ID đang chọn không
+    const matchesDept = filterDept === "" || emp.department?.id === filterDept;
+
+    // Trả về true nếu thỏa mãn CẢ HAI điều kiện
+    return matchesSearch && matchesDept;
+  });
+
   if (loading) return <div className="py-8 text-center text-gray-500">Đang tải dữ liệu nhân viên...</div>;
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-700">Danh sách Nhân viên</h3>
-        <button onClick={openAddModal} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+      {/* HEADER: Tiêu đề + Các bộ lọc + Nút Thêm */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+
+        {/* Cụm Tiêu đề và Bộ lọc */}
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
+          <h3 className="text-lg font-semibold text-gray-700 whitespace-nowrap mr-2">Danh sách Nhân viên</h3>
+
+          {/* 1. Ô Tìm kiếm Text */}
+          <div className="relative w-full sm:w-56">
+            <input
+              type="text"
+              placeholder="Tìm tên, mã NV..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+            />
+            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+
+          {/* 2. Ô Lọc theo Phòng ban (Dropdown) */}
+          <div className="w-full sm:w-48">
+            <select
+              value={filterDept}
+              onChange={(e) => setFilterDept(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow bg-white text-gray-600 cursor-pointer"
+            >
+              <option value="">-- Tất cả phòng ban --</option>
+              {/* Render danh sách phòng ban từ mảng departments đã có sẵn */}
+              {departments.map((d: any) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Nút Thêm mới */}
+        <button onClick={openAddModal} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex-shrink-0 w-full md:w-auto mt-2 md:mt-0">
           + Thêm nhân viên
         </button>
       </div>
@@ -134,12 +192,16 @@ export default function EmployeeMgmt() {
             </tr>
           </thead>
           <tbody>
-            {employees.length === 0 ? (
+            {/* 1. Đổi thành filteredEmployees.length */}
+            {filteredEmployees.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-gray-500">Không có dữ liệu</td>
+                <td colSpan={6} className="p-6 text-center text-gray-500">
+                  {searchTerm || filterDept ? "Không tìm thấy nhân viên" : "Không có dữ liệu"}
+                </td>
               </tr>
             ) : (
-              employees.map((emp: any) => (
+              // 2. Đổi thành filteredEmployees.map
+              filteredEmployees.map((emp: any) => (
                 <tr key={emp.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="p-3 text-sm text-gray-600">{emp.employee_code}</td>
                   <td className="p-3 text-sm font-medium text-gray-800">{emp.full_name}</td>

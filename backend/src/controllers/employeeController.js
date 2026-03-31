@@ -6,6 +6,10 @@ const getAllEmployees = async (req, res) => {
         const employees = await db.Employee.findAll({
             attributes: { exclude: ['password_hash'] },
             include: [{ model: db.Department, as: 'department', attributes: ['id', 'name'] }],
+            order: [
+                ['createdAt', 'ASC'] // Sắp xếp theo cột createdAt tăng dần (Cũ nhất lên đầu)
+                // Nếu muốn mới nhất lên đầu thì đổi 'ASC' thành 'DESC'
+            ],
             raw: true,
             nest: true
         });
@@ -143,7 +147,9 @@ const updateEmployee = async (req, res) => {
 const deleteEmployee = async (req, res) => {
     try {
         const { id } = req.params;
-        const employee = await db.Employee.findByPk(id);
+        const employee = await db.Employee.findByPk(id, {
+            raw: false
+        });
         if (!employee) return res.status(404).json({ success: false, message: 'Không tìm thấy nhân viên!' });
 
         await employee.destroy();
