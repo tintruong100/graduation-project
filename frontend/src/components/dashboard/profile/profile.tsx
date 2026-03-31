@@ -1,18 +1,18 @@
 "use client";
 
-export default function EmployeeDashboard({ user }: { user: any }) {
+export default function profile({ user }: { user: any }) {
   return (
     <div className="bg-white p-8 rounded-xl shadow-md max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-4">Thông tin cá nhân</h2>
 
       <div className="space-y-4">
         <div className="grid grid-cols-3 border-b border-gray-100 pb-3 items-center">
-          <span className="text-gray-500 font-medium">Họ và tên:</span>
-          <span className="col-span-2 text-gray-800 font-semibold">{user.full_name}</span>
-        </div>
-        <div className="grid grid-cols-3 border-b border-gray-100 pb-3 items-center">
           <span className="text-gray-500 font-medium">Mã nhân viên:</span>
           <span className="col-span-2 text-gray-800 font-semibold">{user.employee_code}</span>
+        </div>
+        <div className="grid grid-cols-3 border-b border-gray-100 pb-3 items-center">
+          <span className="text-gray-500 font-medium">Họ và tên:</span>
+          <span className="col-span-2 text-gray-800 font-semibold">{user.full_name}</span>
         </div>
         <div className="grid grid-cols-3 border-b border-gray-100 pb-3 items-center">
           <span className="text-gray-500 font-medium">Email:</span>
