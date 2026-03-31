@@ -7,7 +7,7 @@ const getAllDepartments = async (req, res) => {
                 { model: db.Employee, as: 'manager', attributes: ['id', 'full_name', 'employee_code'] }
             ],
             order: [
-                ['createdAt', 'ASC'] // Sắp xếp theo cột createdAt tăng dần (Cũ nhất lên đầu)
+                ['name', 'ASC'] // Sắp xếp theo cột name tăng dần
                 // Nếu muốn mới nhất lên đầu thì đổi 'ASC' thành 'DESC'
             ],
             raw: true,

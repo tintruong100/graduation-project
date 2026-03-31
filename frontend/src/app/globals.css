@@ -1,4 +1,19 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* THÊM ĐOẠN NÀY VÀO ĐỂ ÉP LIGHT MODE VĨNH VIỄN */
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: #f9fafb;
+  /* Màu nền xám nhạt */
+  color: #111827;
+  /* Màu chữ xám đen cực nét */
+}
 
 :root {
   --background: #ffffff;
@@ -12,12 +27,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+@media (prefers-color-scheme: dark) {}
 
 body {
   background: var(--background);

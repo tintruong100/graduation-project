@@ -1,13 +1,14 @@
 import bcrypt from 'bcryptjs';
 import db from '../models/index.js';
 
+
 const getAllEmployees = async (req, res) => {
     try {
         const employees = await db.Employee.findAll({
             attributes: { exclude: ['password_hash'] },
             include: [{ model: db.Department, as: 'department', attributes: ['id', 'name'] }],
             order: [
-                ['createdAt', 'ASC'] // Sắp xếp theo cột createdAt tăng dần (Cũ nhất lên đầu)
+                ['employee_code', 'ASC'] // Sắp xếp theo cột employee_code tăng dần
                 // Nếu muốn mới nhất lên đầu thì đổi 'ASC' thành 'DESC'
             ],
             raw: true,
@@ -98,7 +99,7 @@ const generateUniqueEmployeeCode = async (fullName) => {
 
 const createEmployee = async (req, res) => {
     try {
-        const { full_name, email, password, department_id, position, role } = req.body;
+        const { full_name, email, password, date_of_birth, gender, phone_number, address, department_id, position, role } = req.body;
 
         if (!full_name || !email || !password) {
             return res.status(400).json({ success: false, message: 'Vui lòng nhập đủ thông tin bắt buộc!' });
@@ -109,7 +110,7 @@ const createEmployee = async (req, res) => {
         const password_hash = await bcrypt.hash(password, 10);
 
         const newEmployee = await db.Employee.create({
-            employee_code: newCode, full_name, email, password_hash, department_id: department_id || null, position, role: role || 'EMPLOYEE'
+            employee_code: newCode, full_name, email, password_hash, date_of_birth, gender, phone_number, address, department_id: department_id || null, position, role: role || 'EMPLOYEE'
         });
 
         // Hide password hash
@@ -125,7 +126,8 @@ const createEmployee = async (req, res) => {
 const updateEmployee = async (req, res) => {
     try {
         const { id } = req.params;
-        const { full_name, email, department_id, position, role, is_active } = req.body;
+        const { full_name, email, password, date_of_birth, gender, phone_number, address, department_id, position, role, is_active } = req.body;
+        console.log('Received update data:', req.body);
 
         const employee = await db.Employee.findByPk(id, {
             raw: false,
@@ -137,7 +139,7 @@ const updateEmployee = async (req, res) => {
             if (existingEmail) return res.status(400).json({ success: false, message: 'Email đã tồn tại!' });
         }
 
-        await employee.update({ full_name, email, department_id: department_id || null, position, role, is_active });
+        await employee.update({ full_name, email, password, date_of_birth, gender, phone_number, address, department_id: department_id || null, position, role, is_active });
         return res.status(200).json({ success: true, message: 'Cập nhật nhân viên thành công!' });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Lỗi server!', error: error.message });
