@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ComingSoon from "@/components/coming-soon/ComingSoon";
+import OverviewDashboard from "@/components/dashboard/overview/OverviewDashboard";
 
 export default function OverviewPage() {
     const router = useRouter();
@@ -34,9 +35,6 @@ export default function OverviewPage() {
 
     // 4. Chỉ render nội dung nếu là Admin
     return (
-        <ComingSoon
-            title="Tổng quan đang phát triển..."
-            description="Các biểu đồ và thống kê tổng quan sẽ sớm có mặt tại đây!"
-        />
+        <OverviewDashboard />
     );
 }

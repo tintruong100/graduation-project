@@ -2,6 +2,7 @@ import express, { Router } from "express";
 import authRoutes from './authRoutes.js';
 import employeeRouter from './employeeRoutes.js';
 import departmentRouter from './departmentRoutes.js';
+import fingerprintRouter from './fingerprintRoutes.js';
 
 let router = express.Router();
 
@@ -14,6 +15,9 @@ let initWebRoutes = (app) => {
 
     // Department Routes
     app.use('/api/v1/departments', departmentRouter);
+
+    // Fingerprint Routes
+    app.use('/api/v1/fingerprints', fingerprintRouter);
 
     return app.use("/", router);
 }
