@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ComingSoon from "@/components/coming-soon/ComingSoon";
+import ScanLog from "@/components/dashboard/scan-history/ScanLog";
 
 export default function ScanHistoryPage() {
     const router = useRouter();
 
     useEffect(() => {
-        document.title = "Tổng quan | HRM System";
+        document.title = "Lịch sử quét | HRM System";
         const verifyAndLoad = () => {
             try {
                 const token = localStorage.getItem("token");
@@ -34,9 +35,6 @@ export default function ScanHistoryPage() {
 
     // 4. Chỉ render nội dung nếu là Admin
     return (
-        <ComingSoon
-            title="Lịch sử quét đang phát triển..."
-            description="Các biểu đồ và thống kê lịch sử quét sẽ sớm có mặt tại đây!"
-        />
+        <ScanLog />
     );
 }

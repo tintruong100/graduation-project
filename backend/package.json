@@ -9,7 +9,6 @@
   },
   "keywords": [
     "nodejs",
-    "rfid",
     "face-recognition"
   ],
   "author": "Tin & Thanh",
@@ -26,6 +25,7 @@
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.8",
     "sequelize-cli": "^6.6.5",
+    "socket.io": "^4.8.3",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

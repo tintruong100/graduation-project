@@ -6,8 +6,9 @@ let fingerprintRouter = express.Router();
 
 fingerprintRouter.use(verifyToken, verifyAdmin);
 fingerprintRouter.get('/', fingerprintController.getAllFingerprints);
-fingerprintRouter.post('/', fingerprintController.createFingerprint);
+fingerprintRouter.post('/', fingerprintController.scanAndCreateFingerprint);
 fingerprintRouter.put('/:id', fingerprintController.updateFingerprint);
 fingerprintRouter.delete('/:id', fingerprintController.deleteFingerprint);
+fingerprintRouter.get('/scan-log', fingerprintController.getAllScanLog);
 
 export default fingerprintRouter;

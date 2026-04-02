@@ -4,7 +4,6 @@ import { fetchWithAuth } from "@/utils/api";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare, faTrashCan, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 
-// 1. CẬP NHẬT INTERFACE THEO DATABASE
 interface Fingerprint {
     id: string;
     employee_id: string;
@@ -13,7 +12,6 @@ interface Fingerprint {
     template_data?: string;
     is_active: boolean;
     createdAt?: string;
-    // Dữ liệu được JOIN từ bảng Employee (theo Backend)
     employee?: {
         id: string;
         full_name: string;
@@ -29,61 +27,18 @@ interface Employee {
 
 export default function FingerprintMgmt() {
     const [fingerprints, setFingerprints] = useState<Fingerprint[]>([]);
-    const [employees, setEmployees] = useState<Employee[]>([]); // Dùng cho Dropdown chọn nhân viên
+    const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    // Thêm state để làm hiệu ứng loading cho nút bấm
     const [isScanning, setIsScanning] = useState(false);
 
-    // Hàm gọi API ra lệnh cho Raspberry quét vân tay
-    const handleScanFingerprint = async () => {
-        // 1. Kiểm tra xem đã chọn nhân viên chưa
-        if (!formData.employee_id) {
-            alert("Vui lòng chọn nhân viên sở hữu trước khi lấy vân tay!");
-            return;
-        }
-        if (!formData.finger_name) {
-            alert("Vui lòng chọn tên ngón tay trước khi lấy vân tay!");
-            return;
-        }
-
-        setIsScanning(true);
-        try {
-            // 2. Gọi API xuống Backend (Bạn nhớ thay đúng URL của bạn nhé)
-            // Ví dụ: POST /fingerprints/scan
-            const res = await fetchWithAuth("/fingerprints/scan", {
-                method: "POST",
-                body: JSON.stringify({ employee_id: formData.employee_id }),
-            });
-
-            const body = await res.json();
-
-            if (res.ok) {
-                // 3. Nếu Raspi trả về thành công, tự động điền ID và Hex ngầm vào state
-                setFormData({
-                    ...formData,
-                    sensor_id: String(body.data.sensor_id),
-                    template_data: body.data.template_data || ""
-                });
-                alert("Lấy vân tay thành công!");
-            } else {
-                alert(body.message || "Quá trình quét thất bại hoặc hết thời gian chờ!");
-            }
-        } catch (error) {
-            console.error("Lỗi khi kết nối tới thiết bị quét:", error);
-            alert("Không thể kết nối với Raspberry Pi.");
-        } finally {
-            setIsScanning(false);
-        }
-    };
-
-    // States cho modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
+
+    // States cho modal XEM CHI TIẾT
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [viewData, setViewData] = useState<Fingerprint | null>(null);
 
-    // Form Data trùng khớp với Backend
     const [formData, setFormData] = useState({
         id: "",
         employee_id: "",
@@ -95,10 +50,9 @@ export default function FingerprintMgmt() {
     const loadData = async () => {
         setLoading(true);
         try {
-            // Tải song song danh sách Vân tay và Nhân viên (để dùng trong Modal thêm)
             const [fingerRes, empRes] = await Promise.all([
                 fetchWithAuth("/fingerprints"),
-                fetchWithAuth("/employees") // API lấy danh sách nhân viên
+                fetchWithAuth("/employees")
             ]);
 
             if (fingerRes.ok) {
@@ -151,7 +105,7 @@ export default function FingerprintMgmt() {
         setIsEdit(true);
         setFormData({
             id: fp.id,
-            employee_id: fp.employee_id, // Lưu lại để hiển thị nhưng sẽ bị disable trong form
+            employee_id: fp.employee_id,
             finger_name: fp.finger_name,
             sensor_id: String(fp.sensor_id),
             template_data: fp.template_data || "",
@@ -166,40 +120,56 @@ export default function FingerprintMgmt() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const url = isEdit ? `/fingerprints/${formData.id}` : `/fingerprints`;
-            const method = isEdit ? "PUT" : "POST";
 
-            const payload: any = {
-                finger_name: formData.finger_name,
-                sensor_id: parseInt(formData.sensor_id),
-                template_data: formData.template_data,
-            };
-
-            // Chỉ gửi employee_id khi là lúc Tạo Mới (Vì Backend của bạn Update không nhận employee_id)
-            if (!isEdit) {
-                payload.employee_id = formData.employee_id;
+        if (isEdit) {
+            try {
+                const res = await fetchWithAuth(`/fingerprints/${formData.id}`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        finger_name: formData.finger_name,
+                    }),
+                });
+                const body = await res.json();
+                if (res.ok) {
+                    alert("Cập nhật thông tin thành công!");
+                    setIsModalOpen(false);
+                    loadData();
+                } else {
+                    alert(body.message || "Lỗi cập nhật!");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Lỗi kết nối.");
             }
+        } else {
+            // LUỒNG TẠO MỚI (QUÉT VÀ LƯU)
+            setIsScanning(true);
+            try {
+                const res = await fetchWithAuth(`/fingerprints`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        employee_id: formData.employee_id,
+                        finger_name: formData.finger_name,
+                    }),
+                });
 
-            const res = await fetchWithAuth(url, {
-                method,
-                body: JSON.stringify(payload),
-            });
-
-            const body = await res.json();
-            if (res.ok) {
-                alert(isEdit ? "Cập nhật thành công!" : "Đăng ký vân tay thành công!");
-                setIsModalOpen(false);
-                loadData();
-            } else {
-                alert(body.message || "Có lỗi xảy ra");
+                const body = await res.json();
+                if (res.ok) {
+                    alert("Đăng ký vân tay thành công!");
+                    setIsModalOpen(false);
+                    loadData();
+                } else {
+                    alert(body.message + "\n" + body.error || "Quá trình quét thất bại hoặc hết thời gian chờ!");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Lỗi kết nối tới thiết bị quét.");
+            } finally {
+                setIsScanning(false);
             }
-        } catch (error) {
-            console.error(error);
         }
     };
 
-    // Tính năng tìm kiếm theo Tên NV, Mã NV hoặc Tên Ngón tay
     const filteredData = fingerprints.filter((fp) => {
         const searchLower = searchTerm.toLowerCase();
         const matchesEmpName = fp.employee?.full_name?.toLowerCase().includes(searchLower);
@@ -240,11 +210,6 @@ export default function FingerprintMgmt() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                         />
-                        <span className="absolute left-3 top-2.5 text-gray-400">
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </span>
                     </div>
                 </div>
 
@@ -304,7 +269,7 @@ export default function FingerprintMgmt() {
                 </table>
             </div>
 
-            {/* MODAL XEM CHI TIẾT */}
+            {/* KHÔI PHỤC LẠI: MODAL XEM CHI TIẾT */}
             {isViewModalOpen && viewData && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)}></div>
@@ -341,7 +306,7 @@ export default function FingerprintMgmt() {
                 </div>
             )}
 
-            {/* MODAL THÊM / SỬA */}
+            {/* MODAL THÊM / SỬA MỚI (Đã gộp nút Quét & Lưu) */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
@@ -357,7 +322,7 @@ export default function FingerprintMgmt() {
                                         required
                                         value={formData.employee_id}
                                         onChange={e => setFormData({ ...formData, employee_id: e.target.value })}
-                                        disabled={isEdit} // Khóa lại không cho đổi chủ sở hữu vân tay nếu đang ở chế độ Sửa
+                                        disabled={isEdit}
                                         className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${isEdit ? "bg-gray-100 cursor-not-allowed" : ""}`}
                                     >
                                         <option value="">-- Chọn nhân viên --</option>
@@ -369,7 +334,7 @@ export default function FingerprintMgmt() {
                                     </select>
                                 </div>
 
-                                {/* Tên Ngón Tay (Đổi thành Select) */}
+                                {/* Tên Ngón Tay */}
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tên Ngón Tay</label>
                                     <select
@@ -396,48 +361,31 @@ export default function FingerprintMgmt() {
                                     </select>
                                 </div>
 
-                                {/* ID Cảm biến & Nút Quét tự động */}
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">ID Cảm biến (Tự động)</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            disabled // Khóa chặt không cho nhập tay
-                                            type="text"
-                                            placeholder="Đang chờ quét..."
-                                            value={formData.sensor_id ? `#${formData.sensor_id}` : ""}
-                                            className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-100 text-gray-600 font-bold cursor-not-allowed outline-none"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleScanFingerprint}
-                                            disabled={isScanning || !formData.employee_id} // Khóa nút nếu chưa chọn NV hoặc đang quét
-                                            className={`flex-shrink-0 px-4 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95 flex items-center justify-center min-w-[140px] 
-                                                ${(isScanning || !formData.employee_id || !formData.finger_name) ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`
-                                            }
-                                        >
-                                            {isScanning ? (
-                                                <span className="flex items-center gap-2">
-                                                    <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
-                                                    Đang chờ Pi...
-                                                </span>
-                                            ) : (
-                                                "Quét vân tay"
-                                            )}
-                                        </button>
-                                    </div>
-
-                                    {/* Dòng thông báo nhỏ để Admin biết mã HEX đã được lấy ngầm thành công */}
-                                    {formData.template_data && (
-                                        <p className="text-xs text-green-600 mt-2 font-semibold flex items-center gap-1">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                            Hệ thống đã thu thập chuỗi HEX an toàn.
-                                        </p>
-                                    )}
-                                </div>
-
                                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-semibold transition-colors">Hủy</button>
-                                    <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-all active:scale-95">Lưu dữ liệu</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(false)}
+                                        disabled={isScanning}
+                                        className="px-5 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isScanning}
+                                        className={`px-6 py-2 rounded-lg font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 text-white
+                                            ${isScanning ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}
+                                        `}
+                                    >
+                                        {isScanning ? (
+                                            <>
+                                                <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                                                Đang chờ Pi quét...
+                                            </>
+                                        ) : (
+                                            isEdit ? "Cập nhật" : "Bắt đầu Quét & Lưu"
+                                        )}
+                                    </button>
                                 </div>
                             </form>
                         </div>
