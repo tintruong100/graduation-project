@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import db from '../models/index.js';
+import { raw } from 'express';
 
 const login = async (req, res) => {
     try {
@@ -90,7 +91,9 @@ const changePassword = async (req, res) => {
         }
 
         // Lúc này dùng findByPk với UUID là hoàn toàn hợp lệ
-        const user = await db.Employee.findByPk(user_id);
+        const user = await db.Employee.findByPk(user_id, {
+            raw: false
+        });
         if (!user) {
             return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng!' });
         }
