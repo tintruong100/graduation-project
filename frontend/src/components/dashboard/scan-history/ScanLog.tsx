@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faTrashCan, faHistory, faClock, faUser, faFingerprint } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faTrashCan, faHistory, faClock } from '@fortawesome/free-solid-svg-icons';
 import { useScanLogs, useDeleteScanLog } from "@/hooks/useScanLogs";
 import type { ScanLog } from "@/types";
+import { toast } from "react-hot-toast";
 
 export default function ScanHistoryMgmt() {
     const { data: scanLogs = [], isLoading: loading } = useScanLogs();

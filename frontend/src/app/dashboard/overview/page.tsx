@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
-import ComingSoon from "@/components/coming-soon/ComingSoon";
 import OverviewDashboard from "@/components/dashboard/overview/OverviewDashboard";
 
 export default function OverviewPage() {

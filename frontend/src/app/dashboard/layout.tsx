@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/auth.store";
-import { useCurrentUser } from "@/hooks/useAuth";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPeopleGroup, faBuilding, faUser, faBars, faXmark, faMagnifyingGlassChart, faCalendarCheck, faClipboardUser, faClockRotateLeft, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import UserProfile from "@/components/layout/UserProfile";
@@ -21,8 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
-    const { isAuthenticated, logout: storeLogout } = useAuthStore();
-    const user = useCurrentUser();
+    const { user, isAuthenticated, logout: storeLogout } = useAuthStore();
 
     useEffect(() => {
         if (!isAuthenticated) {

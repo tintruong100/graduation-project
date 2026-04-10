@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import { fetchClient } from "@/lib/fetch/client";
 import type { AuthUser, AnyUser } from "@/types";
@@ -26,7 +25,6 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const router = useRouter();
   const { user, token, isAuthenticated, setUser, logout: storeLogout } = useAuthStore();
   const hasFetched = useRef(false);
 
@@ -39,16 +37,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       .get<AuthUser>("/auth/me")
       .then((res) => setUser(res.data))
       .catch(() => {
+        // Token invalid → clear local state; layout/middleware will redirect
         storeLogout();
-        router.push("/login");
+        document.cookie = "hrm-token=; path=/; max-age=0";
       });
-  }, [isAuthenticated, setUser, storeLogout, router]);
+  }, [isAuthenticated, setUser, storeLogout]);
 
-  const logout = async () => {
+  const logout = () => {
     storeLogout();
     // Remove the auth cookie used by proxy middleware
     document.cookie = "hrm-token=; path=/; max-age=0";
-    router.push("/login");
   };
 
   return (
