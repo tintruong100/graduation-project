@@ -47,8 +47,9 @@ export function useLogout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => fetchClient.post("/auth/logout"),
-    onSettled: () => {
+    // Backend không có /auth/logout endpoint — chỉ xử lý client-side
+    mutationFn: () => Promise.resolve(),
+    onSuccess: () => {
       logout();
       document.cookie = "hrm-token=; path=/; max-age=0";
       queryClient.clear();
