@@ -2,36 +2,34 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/auth.store";
 import ComingSoon from "@/components/coming-soon/ComingSoon";
 import ScanLog from "@/components/dashboard/scan-history/ScanLog";
 
 export default function ScanHistoryPage() {
     const router = useRouter();
+    const { user, isAuthenticated, logout: storeLogout } = useAuthStore();
 
     useEffect(() => {
         document.title = "Lịch sử quét | HRM System";
         const verifyAndLoad = () => {
             try {
-                const token = localStorage.getItem("token");
-                if (!token) {
+                if (!isAuthenticated || !user) {
                     router.push("/login");
                     return;
                 }
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const payload = JSON.parse(window.atob(base64));
-                if (payload.role !== "ADMIN") {
+                if (user.role !== "ADMIN") {
                     router.push("/dashboard/profile");
                     return;
                 }
             } catch (err) {
-                console.error("Token không hợp lệ hoặc đã bị sửa đổi:", err);
-                localStorage.removeItem("token");
+                console.error("Không thể xác thực quyền truy cập:", err);
+                storeLogout();
                 router.push("/login");
             }
         };
         verifyAndLoad();
-    }, [router]);
+    }, [router, user, isAuthenticated, storeLogout]);
 
     // 4. Chỉ render nội dung nếu là Admin
     return (

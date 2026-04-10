@@ -1,26 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
-import { fetchWithAuth } from "@/utils/api";
+import { useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faTrashCan, faHistory, faClock, faUser, faFingerprint } from '@fortawesome/free-solid-svg-icons';
-
-interface ScanLog {
-    id: string;
-    employee_id: string | null; // Có thể null nếu người lạ quét
-    scan_time: string; // TypeScript dùng string cho ngày tháng thay vì timestamp
-    image_path: string | null;
-    status: string; // SUCCESS hoặc FAILED
-    createdAt?: string;
-    employee?: {
-        id: string;
-        full_name: string;
-        employee_code: string;
-    };
-}
+import { useScanLogs, useDeleteScanLog } from "@/hooks/useScanLogs";
+import type { ScanLog } from "@/types";
 
 export default function ScanHistoryMgmt() {
-    const [scanLogs, setScanLogs] = useState<ScanLog[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: scanLogs = [], isLoading: loading } = useScanLogs();
+    const deleteScanLog = useDeleteScanLog();
+
     const [searchTerm, setSearchTerm] = useState("");
 
     // States cho modal XEM CHI TIẾT
@@ -30,38 +18,9 @@ export default function ScanHistoryMgmt() {
     // CHÚ Ý: Cập nhật biến này thành địa chỉ Backend của bạn
     const BACKEND_URL = "http://192.168.0.134:8001";
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const res = await fetchWithAuth("/fingerprints/scan-log");
-            if (res.ok) {
-                const body = await res.json();
-                setScanLogs(body.data || []);
-            }
-        } catch (e) {
-            console.error("Lỗi tải dữ liệu lịch sử:", e);
-            setScanLogs([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const handleDelete = async (id: string) => {
+    const handleDelete = (id: string) => {
         if (!confirm("Bạn có chắc muốn xoá dữ liệu lịch sử này?")) return;
-        try {
-            const res = await fetchWithAuth(`/fingerprints/scan-log/${id}`, { method: "DELETE" });
-            if (res.ok) {
-                loadData();
-            } else {
-                alert("Có lỗi xảy ra khi xoá.");
-            }
-        } catch (e) {
-            console.error(e);
-        }
+        deleteScanLog.mutate(id);
     };
 
     const openViewModal = (log: ScanLog) => {

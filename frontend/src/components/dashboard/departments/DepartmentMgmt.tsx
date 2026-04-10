@@ -1,8 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
-import { fetchWithAuth } from "@/utils/api";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
+import { useEmployees } from "@/hooks/useEmployees";
+import { departmentSchema, type DepartmentFormValues } from "@/validations/department.schema";
 
 interface Department {
   id: string;
@@ -14,101 +18,62 @@ interface Department {
 }
 
 export default function DepartmentMgmt() {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: departments = [], isLoading: deptLoading } = useDepartments();
+  const { data: employees = [], isLoading: empLoading } = useEmployees();
+  const createDept = useCreateDepartment();
+  const deleteDept = useDeleteDepartment();
+
+  const loading = deptLoading || empLoading;
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    manager_id: "",
-    start_time: "08:00",
-    end_time: "17:00",
+  const [editId, setEditId] = useState("");
+
+  const updateDept = useUpdateDepartment(editId);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<DepartmentFormValues>({
+    resolver: zodResolver(departmentSchema),
+    defaultValues: { name: "", manager_id: "", start_time: "08:00", end_time: "17:00" },
   });
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [deptRes, empRes] = await Promise.all([
-        fetchWithAuth("/departments"),
-        fetchWithAuth("/employees")
-      ]);
-      if (deptRes.ok) setDepartments((await deptRes.json()).data || []);
-      if (empRes.ok) setEmployees((await empRes.json()).data || []);
-    } catch (e) {
-      console.error("Lỗi tải dữ liệu:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xoá phòng ban này? Các nhân viên trực thuộc có thể bị ảnh hưởng.")) return;
-    try {
-      const res = await fetchWithAuth(`/departments/${id}`, { method: "DELETE" });
-      const body = await res.json();
-      if (res.ok) {
-        alert(body.message || "Xoá phòng ban thành công");
-        loadData();
-      } else {
-        alert(body.message || "Có lỗi xảy ra");
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    deleteDept.mutate(id);
   };
 
   const openAddModal = () => {
     setIsEdit(false);
-    setFormData({ id: "", name: "", manager_id: "", start_time: "08:00", end_time: "17:00" });
+    setEditId("");
+    reset({ name: "", manager_id: "", start_time: "08:00", end_time: "17:00" });
     setIsModalOpen(true);
   };
 
   const openEditModal = (dept: Department) => {
     setIsEdit(true);
-    setFormData({
-      id: dept.id,
+    setEditId(dept.id);
+    reset({
       name: dept.name,
       manager_id: dept.manager?.id || "",
-      // Đảm bảo lấy đúng định dạng HH:mm
       start_time: dept.start_time?.slice(0, 5) || "08:00",
       end_time: dept.end_time?.slice(0, 5) || "17:00",
     });
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const url = isEdit ? `/departments/${formData.id}` : `/departments`;
-      const method = isEdit ? "PUT" : "POST";
+  const onSubmit = (values: DepartmentFormValues) => {
+    const payload = { ...values };
+    if (!payload.manager_id) delete (payload as any).manager_id;
 
-      const payload = { ...formData };
-      if (!payload.manager_id) delete (payload as any).manager_id;
-      if (!isEdit) delete (payload as any).id;
-
-      const res = await fetchWithAuth(url, {
-        method,
-        body: JSON.stringify(payload),
-      });
-
-      const body = await res.json();
-      if (res.ok) {
-        alert(isEdit ? "Cập nhật phòng ban thành công!" : "Thêm phòng ban thành công!");
-        setIsModalOpen(false);
-        loadData();
-      } else {
-        alert(body.message || "Có lỗi xảy ra");
-      }
-    } catch (error) {
-      console.error(error);
+    if (isEdit) {
+      updateDept.mutate(payload, { onSuccess: () => setIsModalOpen(false) });
+    } else {
+      createDept.mutate(payload, { onSuccess: () => setIsModalOpen(false) });
     }
   };
 
@@ -196,24 +161,22 @@ export default function DepartmentMgmt() {
               <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">
                 {isEdit ? "Cập nhật phòng ban" : "Tạo phòng ban mới"}
               </h2>
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div >
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tên phòng ban</label>
                   <input
                     type="text"
-                    required
                     placeholder="Ví dụ: Phòng Kỹ thuật"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    {...register("name")}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
                   />
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Trưởng phòng</label>
                   <select
-                    value={formData.manager_id}
-                    onChange={e => setFormData({ ...formData, manager_id: e.target.value })}
+                    {...register("manager_id")}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-700"
                   >
                     <option value="">-- Chọn nhân sự quản lý --</option>
@@ -231,17 +194,25 @@ export default function DepartmentMgmt() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Giờ bắt đầu</label>
-                    <input type="time" required value={formData.start_time} onChange={e => setFormData({ ...formData, start_time: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="time" {...register("start_time")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    {errors.start_time && <p className="text-red-500 text-xs mt-1">{errors.start_time.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Giờ kết thúc</label>
-                    <input type="time" required value={formData.end_time} onChange={e => setFormData({ ...formData, end_time: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="time" {...register("end_time")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    {errors.end_time && <p className="text-red-500 text-xs mt-1">{errors.end_time.message}</p>}
                   </div>
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-6 border-t">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-semibold transition-colors">Hủy</button>
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-lg transition-all active:scale-95">Lưu thông tin</button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || createDept.isPending || updateDept.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-2 rounded-lg font-bold shadow-lg transition-all active:scale-95"
+                  >
+                    Lưu thông tin
+                  </button>
                 </div>
               </form>
             </div>

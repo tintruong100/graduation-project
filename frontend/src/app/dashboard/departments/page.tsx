@@ -2,40 +2,37 @@
 
 import { useEffect, useState, useContext } from "react";
 import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "@/utils/api";
+import { useAuthStore } from "@/store/auth.store";
 
 // 1. Nhập đúng Component quản lý phòng ban
 import DepartmentMgmt from "@/components/dashboard/departments/DepartmentMgmt";
 
 export default function DepartmentsPage() {
     const router = useRouter();
+    const { user, isAuthenticated, logout: storeLogout } = useAuthStore();
 
     useEffect(() => {
         document.title = "Quản lý Phòng ban | HRM System";
 
         const verifyAndLoad = () => {
             try {
-                const token = localStorage.getItem("token");
-                if (!token) {
+                if (!isAuthenticated || !user) {
                     router.push("/login");
                     return;
                 }
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const payload = JSON.parse(window.atob(base64));
-                if (payload.role !== "ADMIN") {
+                if (user.role !== "ADMIN") {
                     router.push("/dashboard/profile");
                     return;
                 }
             } catch (err) {
-                console.error("Token không hợp lệ hoặc đã bị sửa đổi:", err);
-                localStorage.removeItem("token");
+                console.error("Không thể xác thực quyền truy cập:", err);
+                storeLogout();
                 router.push("/login");
             }
         };
 
         verifyAndLoad();
-    }, [router]);
+    }, [router, user, isAuthenticated, storeLogout]);
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">

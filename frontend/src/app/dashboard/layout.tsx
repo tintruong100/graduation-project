@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { fetchWithAuth } from "@/utils/api";
+import { useAuthStore } from "@/store/auth.store";
+import { useCurrentUser } from "@/hooks/useAuth";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPeopleGroup, faBuilding, faUser, faBars, faXmark, faMagnifyingGlassChart, faCalendarCheck, faClipboardUser, faClockRotateLeft, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import UserProfile from "@/components/layout/UserProfile";
@@ -16,38 +17,18 @@ const ChevronRightIcon = () => (
 );
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State riêng cho mobile
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
+    const { isAuthenticated, logout: storeLogout } = useAuthStore();
+    const user = useCurrentUser();
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        if (!isAuthenticated) {
             router.push("/login");
-            return;
         }
-
-        const getUser = async () => {
-            try {
-                const res = await fetchWithAuth("/auth/me");
-                if (res.ok) {
-                    const data = await res.json();
-                    setUser(data.data);
-                } else {
-                    localStorage.removeItem("token");
-                    router.push("/login");
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        getUser();
-    }, [router]);
+    }, [isAuthenticated, router]);
 
     // Tự động đóng Mobile Menu khi chuyển trang
     useEffect(() => {
@@ -55,16 +36,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }, [pathname]);
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
+        storeLogout();
+        document.cookie = "hrm-token=; path=/; max-age=0";
         router.push("/login");
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-xl font-semibold text-gray-500 animate-pulse">Đang tải...</div>
-            </div>
-        );
+    if (!isAuthenticated) {
+        return null;
     }
 
     const menuItems = [];
@@ -141,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                     <div className="flex items-center gap-4">
                         {/* Các icon thông báo, cài đặt gì đó của bạn */}
-                        <UserProfile userName={user?.full_name} onLogout={handleLogout} />
+                        <UserProfile userName={user?.full_name ?? ""} onLogout={handleLogout} />
                     </div>
                 </div>
             </header>

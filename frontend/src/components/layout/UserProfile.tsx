@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle, faKey, faRightFromBracket, faXmark, faChevronDown } from '@fortawesome/free-solid-svg-icons';
-import { fetchWithAuth } from "@/utils/api";
+import { useChangePassword } from "@/hooks/useAuth";
+import { changePasswordSchema, type ChangePasswordFormValues } from "@/validations/changePassword.schema";
 
 // Khai báo Props nhận từ Layout truyền vào
 interface UserProfileProps {
@@ -13,19 +15,20 @@ interface UserProfileProps {
 }
 
 export default function UserProfile({ userName, onLogout }: UserProfileProps) {
-    const router = useRouter();
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const changePassword = useChangePassword();
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-    // States cho Modal Đổi Mật Khẩu
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [passwordData, setPasswordData] = useState({
-        oldPassword: "",
-        newPassword: "",
-        confirmPassword: ""
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<ChangePasswordFormValues>({
+        resolver: zodResolver(changePasswordSchema),
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         // Chỉ còn giữ lại sự kiện click ra ngoài để đóng menu dropdown
@@ -39,40 +42,11 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
     }, []);
 
     // Xử lý Đổi mật khẩu
-    const handlePasswordSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            alert("Mật khẩu mới và Xác nhận mật khẩu không khớp!");
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const res = await fetchWithAuth("/auth/change-password", {
-                method: "PUT",
-                body: JSON.stringify({
-                    old_password: passwordData.oldPassword,
-                    new_password: passwordData.newPassword
-                })
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
-                setIsModalOpen(false);
-                // Xoá token và ép đăng nhập lại mà không cần hỏi (khác với nút Đăng xuất)
-                localStorage.removeItem("token");
-                router.push("/login");
-            } else {
-                alert(data.message || "Đổi mật khẩu thất bại!");
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Lỗi kết nối đến máy chủ.");
-        } finally {
-            setIsSubmitting(false);
-        }
+    const onPasswordSubmit = (values: ChangePasswordFormValues) => {
+        changePassword.mutate(
+            { old_password: values.oldPassword, new_password: values.newPassword },
+            { onSuccess: () => setIsModalOpen(false) }
+        );
     };
 
     return (
@@ -98,8 +72,8 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
                         <button
                             onClick={() => {
                                 setIsDropdownOpen(false);
+                                reset();
                                 setIsModalOpen(true);
-                                setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
                             }}
                             className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3 font-medium"
                         >
@@ -135,36 +109,36 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
                                 </button>
                             </div>
 
-                            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            <form onSubmit={handleSubmit(onPasswordSubmit)} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mật khẩu hiện tại</label>
                                     <input
-                                        type="password" required
-                                        value={passwordData.oldPassword}
-                                        onChange={e => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                                        type="password"
+                                        {...register("oldPassword")}
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
                                         placeholder="Nhập mật khẩu đang dùng"
                                     />
+                                    {errors.oldPassword && <p className="text-red-500 text-xs mt-1">{errors.oldPassword.message}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mật khẩu mới</label>
                                     <input
-                                        type="password" required minLength={6}
-                                        value={passwordData.newPassword}
-                                        onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                        type="password"
+                                        {...register("newPassword")}
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
                                         placeholder="Tối thiểu 6 ký tự"
                                     />
+                                    {errors.newPassword && <p className="text-red-500 text-xs mt-1">{errors.newPassword.message}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Xác nhận mật khẩu mới</label>
                                     <input
-                                        type="password" required minLength={6}
-                                        value={passwordData.confirmPassword}
-                                        onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                        type="password"
+                                        {...register("confirmPassword")}
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
                                         placeholder="Nhập lại mật khẩu mới"
                                     />
+                                    {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
                                 </div>
 
                                 <div className="flex justify-end gap-3 pt-4">
@@ -172,17 +146,17 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}
                                         className="px-5 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-semibold transition-colors"
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || changePassword.isPending}
                                     >
                                         Hủy
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || changePassword.isPending}
                                         className={`px-6 py-2 rounded-lg font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center min-w-[120px] 
-                                            ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                            ${isSubmitting || changePassword.isPending ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
                                     >
-                                        {isSubmitting ? (
+                                        {isSubmitting || changePassword.isPending ? (
                                             <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                                         ) : "Cập nhật"}
                                     </button>

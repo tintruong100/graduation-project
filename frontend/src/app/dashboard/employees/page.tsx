@@ -2,37 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchWithAuth } from "@/utils/api";
-
+import { useAuthStore } from "@/store/auth.store";
 import EmployeeMgmt from "@/components/dashboard/employees/EmployeeMgmt";
 
 export default function EmployeesPage() {
     const router = useRouter();
+    const { user, isAuthenticated, logout: storeLogout } = useAuthStore();
 
     useEffect(() => {
         document.title = "Quản lý Nhân viên | HRM System";
         const verifyAndLoad = () => {
             try {
-                const token = localStorage.getItem("token");
-                if (!token) {
+                if (!isAuthenticated || !user) {
                     router.push("/login");
                     return;
                 }
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const payload = JSON.parse(window.atob(base64));
-                if (payload.role !== "ADMIN" && payload.role !== "MANAGER") {
+                if (user.role !== "ADMIN" && user.role !== "MANAGER") {
                     router.push("/dashboard/profile");
                     return;
                 }
             } catch (err) {
-                console.error("Token không hợp lệ hoặc đã bị sửa đổi:", err);
-                localStorage.removeItem("token");
+                console.error("Không thể xác thực quyền truy cập:", err);
+                storeLogout();
                 router.push("/login");
             }
         };
         verifyAndLoad();
-    }, [router]);
+    }, [router, user, isAuthenticated, storeLogout]);
 
     // 4. Chỉ render nội dung nếu là Admin
     return (
