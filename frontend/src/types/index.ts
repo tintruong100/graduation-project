@@ -39,6 +39,10 @@ export interface AuthUser {
   avatar?: string;
   is_active: boolean;
   position?: string;
+  date_of_birth?: string;
+  gender?: boolean;
+  phone_number?: string;
+  address?: string;
 }
 
 export interface LoginResponse {

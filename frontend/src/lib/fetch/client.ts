@@ -125,8 +125,8 @@ export const fetchClient = {
       })
         .then((res) => res.json() as Promise<ApiResponse<T>>)
         .then((json) => {
-          if (json && !(json as any).success) {
-            throw new ApiError(400, (json as any).message ?? "Upload failed", "Error");
+          if (json && !(json as ApiResponse<T>).success) {
+            throw new ApiError(400, (json as ApiResponse<T>).message ?? "Upload failed", "Error");
           }
           return json;
         });

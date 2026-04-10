@@ -15,7 +15,7 @@ import {
 import { useDepartments } from "@/hooks/useDepartments";
 import { employeeSchema, type EmployeeFormValues } from "@/validations/employee.schema";
 import { useConfirm } from "@/hooks/useConfirm";
-import type { AuthUser } from "@/types";
+import type { AuthUser, Department } from "@/types";
 
 // Di chuyển Interface ra ngoài component để tái sử dụng nếu cần
 interface Employee {
@@ -140,7 +140,7 @@ export default function EmployeeMgmt() {
       updateEmployee.mutate(payload, { onSuccess: () => setIsModalOpen(false) });
     } else {
       const payload = { ...values, password: values.password! };
-      if (!payload.department_id) delete (payload as any).department_id;
+      if (!payload.department_id) delete (payload as Partial<typeof payload>).department_id;
       createEmployee.mutate(payload, { onSuccess: () => setIsModalOpen(false) });
     }
   };
@@ -166,7 +166,7 @@ export default function EmployeeMgmt() {
     }
   };
 
-  const renderGender = (gender: any) => {
+  const renderGender = (gender: boolean | number | string | null | undefined): string => {
     if (gender === true || gender === 1 || gender === "true") return "Nam";
     if (gender === false || gender === 0 || gender === "false") return "Nữ";
     return "Chưa có thông tin";
@@ -428,7 +428,7 @@ export default function EmployeeMgmt() {
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phòng ban trực thuộc</label>
                   <select {...register("department_id")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="">-- Chọn phòng ban --</option>
-                    {departments.map((d: any) => (
+                    {departments.map((d: Department) => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                   </select>

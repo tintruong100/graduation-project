@@ -1,6 +1,8 @@
 "use client";
 
-export default function profile({ user }: { user: any }) {
+import type { AuthUser } from "@/types";
+
+export default function profile({ user }: { user: AuthUser }) {
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "Chưa có thông tin";
     try {
@@ -11,8 +13,7 @@ export default function profile({ user }: { user: any }) {
     }
   };
 
-  // Hàm hiển thị giới tính đồng bộ
-  const renderGender = (gender: any) => {
+  const renderGender = (gender: boolean | number | string | null | undefined): string => {
     if (gender === true || gender === 1 || gender === "true") return "Nam";
     if (gender === false || gender === 0 || gender === "false") return "Nữ";
     return "Chưa có thông tin";

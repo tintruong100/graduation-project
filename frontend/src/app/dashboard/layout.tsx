@@ -26,11 +26,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
     }, [isAuthenticated, router]);
 
-    // Tự động đóng Mobile Menu khi chuyển trang
-    useEffect(() => {
-        setIsMobileMenuOpen(false);
-    }, [pathname]);
-
     const handleLogout = () => {
         storeLogout();
         document.cookie = "hrm-token=; path=/; max-age=0";
@@ -148,6 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     <Link
                                         href={item.path}
                                         title={collapsed ? item.label : undefined}
+                                        onClick={() => setIsMobileMenuOpen(false)}
                                         className={`
                                             group flex items-center rounded-xl transition-all duration-200 font-medium text-sm
                                             ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5"}

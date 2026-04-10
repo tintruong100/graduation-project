@@ -3,17 +3,18 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { useEmployees } from "@/hooks/useEmployees";
 import { departmentSchema, type DepartmentFormValues } from "@/validations/department.schema";
 import { useConfirm } from "@/hooks/useConfirm";
+import type { Employee } from "@/types";
 
 interface Department {
   id: string;
   name: string;
-  manager?: { id: string, full_name: string, employee_code: string };
-  employees?: any[];
+  manager?: { id: string; full_name: string; employee_code: string };
+  employees?: { id: string }[];
   start_time: string;
   end_time: string;
 }
@@ -77,7 +78,7 @@ export default function DepartmentMgmt() {
 
   const onSubmit = (values: DepartmentFormValues) => {
     const payload = { ...values };
-    if (!payload.manager_id) delete (payload as any).manager_id;
+    if (!payload.manager_id) delete (payload as Partial<typeof payload>).manager_id;
 
     if (isEdit) {
       updateDept.mutate(payload, { onSuccess: () => setIsModalOpen(false) });
@@ -191,8 +192,8 @@ export default function DepartmentMgmt() {
                   >
                     <option value="">-- Chọn nhân sự quản lý --</option>
                     {employees
-                      .filter((emp: any) => emp.role === 'MANAGER' || emp.role === 'ADMIN')
-                      .map((emp: any) => (
+                      .filter((emp: Employee) => emp.role === 'MANAGER' || emp.role === 'ADMIN')
+                      .map((emp: Employee) => (
                         <option key={emp.id} value={emp.id}>
                           {emp.full_name} ({emp.employee_code})
                         </option>

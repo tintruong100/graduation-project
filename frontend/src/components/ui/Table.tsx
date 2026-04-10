@@ -43,11 +43,22 @@ export function Table<T>({
   paginate = true,
   defaultPageSize = 10,
 }: TableProps<T>) {
-  const [page, setPage] = useState(1);
+  // page is stored together with the data-length snapshot it was set for.
+  // When data.length changes (search/filter), effective page resets to 1.
+  const [{ page, dataLengthAtSet }, setPageState] = useState({ page: 1, dataLengthAtSet: data.length });
   const [pageSize, setPageSize] = useState(defaultPageSize);
 
+  const effectivePage = dataLengthAtSet === data.length ? page : 1;
+
+  const setPage = (p: number | ((prev: number) => number)) => {
+    setPageState((prev) => ({
+      page: typeof p === "function" ? p(prev.page) : p,
+      dataLengthAtSet: data.length,
+    }));
+  };
+
   const totalPages = paginate ? Math.max(1, Math.ceil(data.length / pageSize)) : 1;
-  const safeCurrentPage = Math.min(page, totalPages);
+  const safeCurrentPage = Math.min(effectivePage, totalPages);
 
   const pageData = useMemo(() => {
     if (!paginate) return data;
@@ -61,9 +72,7 @@ export function Table<T>({
     return String(row[rowKey]);
   };
 
-  // Reset to page 1 when data changes (e.g. after search/filter)
-  const dataLength = data.length;
-  useMemo(() => { setPage(1); }, [dataLength]);
+  // Reset to page 1 when data length changes — handled via compound state (effectivePage)
 
   if (isLoading) return <TableSkeleton rows={5} cols={columns.length} />;
 

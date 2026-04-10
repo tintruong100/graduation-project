@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faTrashCan, faHistory, faClock } from '@fortawesome/free-solid-svg-icons';
 import { useScanLogs, useDeleteScanLog } from "@/hooks/useScanLogs";
 import type { ScanLog } from "@/types";
-import { toast } from "react-hot-toast";
 import { useConfirm } from "@/hooks/useConfirm";
 
 export default function ScanHistoryMgmt() {
@@ -16,9 +16,6 @@ export default function ScanHistoryMgmt() {
     // States cho modal XEM CHI TIẾT
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [viewData, setViewData] = useState<ScanLog | null>(null);
-
-    // CHÚ Ý: Cập nhật biến này thành địa chỉ Backend của bạn
-    const BACKEND_URL = "http://192.168.0.134:8001";
 
     const { confirm, ConfirmUI } = useConfirm();
 
@@ -175,15 +172,20 @@ export default function ScanHistoryMgmt() {
                                     <span className="text-gray-500 font-medium mb-3">Hình ảnh chụp lại:</span>
                                     <div className="w-full min-h-[200px] border border-gray-200 bg-gray-50 rounded p-2 flex items-center justify-center">
                                         {viewData.image_path ? (
-                                            <img
-                                                // Nếu url đã có http thì dùng luôn, chưa có thì ghép với domain backend
-                                                src={viewData.image_path.startsWith('http') ? viewData.image_path : `http://localhost:8000${viewData.image_path}`}
-                                                alt="Ảnh chấm công"
-                                                className="max-w-full h-auto max-h-[280px] object-contain rounded shadow-sm"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Loi+Hien+Thi+Anh';
-                                                }}
-                                            />
+                                            <div className="relative w-full max-h-[280px] flex items-center justify-center">
+                                                <Image
+                                                    // Nếu url đã có http thì dùng luôn, chưa có thì ghép với domain backend
+                                                    src={viewData.image_path.startsWith('http') ? viewData.image_path : `http://localhost:8000${viewData.image_path}`}
+                                                    alt="Ảnh chấm công"
+                                                    width={400}
+                                                    height={280}
+                                                    className="max-w-full h-auto max-h-[280px] object-contain rounded shadow-sm"
+                                                    unoptimized
+                                                    onError={(e) => {
+                                                        (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Loi+Hien+Thi+Anh';
+                                                    }}
+                                                />
+                                            </div>
                                         ) : (
                                             <span className="text-gray-400 text-sm font-medium">Không có dữ liệu ảnh</span>
                                         )}

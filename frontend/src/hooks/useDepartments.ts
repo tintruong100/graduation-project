@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { fetchClient } from "@/lib/fetch/client";
-import type { Department, ApiResponse } from "@/types";
+import type { Department } from "@/types";
 import type { DepartmentFormValues } from "@/validations/department.schema";
 
 export const departmentKeys = {

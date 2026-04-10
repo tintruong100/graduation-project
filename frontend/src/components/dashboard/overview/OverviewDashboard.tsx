@@ -6,6 +6,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faBuilding, faFileCircleExclamation, faChartPie, faArrowRight, faUserPlus, faFingerprint } from '@fortawesome/free-solid-svg-icons';
+import type { Employee } from "@/types";
 
 interface DashboardStats {
     totalEmployees: number;
@@ -33,8 +34,8 @@ export default function OverviewDashboard() {
     const loading = empLoading || deptLoading;
 
     // 3. Xử lý số liệu
-    const activeEmps = employees.filter((e: any) => String(e.is_active) === "true");
-    const malesCount = employees.filter((e: any) => String(e.gender) === "true" || e.gender === 1).length;
+    const activeEmps = employees.filter((e: Employee) => String(e.is_active) === "true");
+    const malesCount = employees.filter((e: Employee) => String(e.gender) === "true" || (e.gender as unknown as number) === 1).length;
 
     const stats: DashboardStats = {
         totalEmployees: employees.length,
@@ -46,7 +47,7 @@ export default function OverviewDashboard() {
 
     // 4. Tính toán phân bổ nhân sự
     const deptCountMap: Record<string, number> = {};
-    employees.forEach((emp: any) => {
+    employees.forEach((emp: Employee) => {
         const deptName = emp.department?.name || "Chưa phân bổ";
         deptCountMap[deptName] = (deptCountMap[deptName] || 0) + 1;
     });

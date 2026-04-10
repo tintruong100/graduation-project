@@ -18,9 +18,8 @@ export function TopProgressBar() {
     if (prevPathRef.current === pathname) return;
     prevPathRef.current = pathname;
 
-    // Start animation
-    setProgress(0);
-    setVisible(true);
+    // Reset and start animation on route change (async to satisfy lint rule)
+    const t0 = setTimeout(() => { setProgress(0); setVisible(true); }, 0);
 
     // Rapid climb to ~80%, then stall
     const t1 = setTimeout(() => setProgress(30), 50);
@@ -35,6 +34,7 @@ export function TopProgressBar() {
     }, 700);
 
     return () => {
+      clearTimeout(t0);
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);

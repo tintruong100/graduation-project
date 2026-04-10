@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { fetchClient } from "@/lib/fetch/client";
-import type { Employee, ApiResponse } from "@/types";
+import type { Employee } from "@/types";
 import type { EmployeeFormValues } from "@/validations/employee.schema";
 
 export const employeeKeys = {
