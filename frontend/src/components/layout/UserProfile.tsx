@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -93,9 +94,9 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
                 </div>
             )}
 
-            {/* MODAL ĐỔI MẬT KHẨU */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {/* MODAL ĐỔI MẬT KHẨU — rendered via portal to escape header stacking context */}
+            {isModalOpen && typeof document !== "undefined" && createPortal(
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !isSubmitting && setIsModalOpen(false)}></div>
                     <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
                         <div className="p-6">
@@ -164,7 +165,8 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
                             </form>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
