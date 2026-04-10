@@ -5,6 +5,7 @@ import { faEye, faTrashCan, faHistory, faClock } from '@fortawesome/free-solid-s
 import { useScanLogs, useDeleteScanLog } from "@/hooks/useScanLogs";
 import type { ScanLog } from "@/types";
 import { toast } from "react-hot-toast";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export default function ScanHistoryMgmt() {
     const { data: scanLogs = [], isLoading: loading } = useScanLogs();
@@ -19,8 +20,16 @@ export default function ScanHistoryMgmt() {
     // CHÚ Ý: Cập nhật biến này thành địa chỉ Backend của bạn
     const BACKEND_URL = "http://192.168.0.134:8001";
 
-    const handleDelete = (id: string) => {
-        if (!confirm("Bạn có chắc muốn xoá dữ liệu lịch sử này?")) return;
+    const { confirm, ConfirmUI } = useConfirm();
+
+    const handleDelete = async (id: string) => {
+        const ok = await confirm({
+            title: "Xoá lịch sử quét",
+            message: "Bạn có chắc muốn xoá dữ liệu lịch sử này? Hành động này không thể hoàn tác.",
+            confirmLabel: "Xoá",
+            variant: "danger",
+        });
+        if (!ok) return;
         deleteScanLog.mutate(id);
     };
 
@@ -49,6 +58,7 @@ export default function ScanHistoryMgmt() {
 
     return (
         <div className="p-4">
+            {ConfirmUI}
             {/* HEADER */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">

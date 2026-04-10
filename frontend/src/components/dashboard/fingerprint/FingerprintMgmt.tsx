@@ -12,6 +12,7 @@ import {
 } from "@/hooks/useFingerprints";
 import { useEmployees } from "@/hooks/useEmployees";
 import { fingerprintSchema, type FingerprintFormValues } from "@/validations/fingerprint.schema";
+import { useConfirm } from "@/hooks/useConfirm";
 import type { Fingerprint } from "@/types";
 
 interface Employee {
@@ -41,6 +42,8 @@ export default function FingerprintMgmt() {
     const createFingerprint = useCreateFingerprint();
     const updateFingerprint = useUpdateFingerprint(editId);
 
+    const { confirm, ConfirmUI } = useConfirm();
+
     const {
         register,
         handleSubmit,
@@ -51,8 +54,14 @@ export default function FingerprintMgmt() {
         defaultValues: { employee_id: "", finger_name: "" },
     });
 
-    const handleDelete = (id: string) => {
-        if (!confirm("Bạn có chắc muốn xoá dữ liệu vân tay này?")) return;
+    const handleDelete = async (id: string) => {
+        const ok = await confirm({
+            title: "Xoá dữ liệu vân tay",
+            message: "Bạn có chắc muốn xoá dữ liệu vân tay này? Hành động này không thể hoàn tác.",
+            confirmLabel: "Xoá",
+            variant: "danger",
+        });
+        if (!ok) return;
         deleteFingerprint.mutate(id);
     };
 
@@ -119,6 +128,7 @@ export default function FingerprintMgmt() {
 
     return (
         <div className="p-4">
+            {ConfirmUI}
             {/* HEADER */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">

@@ -7,6 +7,7 @@ import { faEye, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-ic
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { useEmployees } from "@/hooks/useEmployees";
 import { departmentSchema, type DepartmentFormValues } from "@/validations/department.schema";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface Department {
   id: string;
@@ -32,6 +33,8 @@ export default function DepartmentMgmt() {
 
   const updateDept = useUpdateDepartment(editId);
 
+  const { confirm, ConfirmUI } = useConfirm();
+
   const {
     register,
     handleSubmit,
@@ -43,7 +46,13 @@ export default function DepartmentMgmt() {
   });
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xoá phòng ban này? Các nhân viên trực thuộc có thể bị ảnh hưởng.")) return;
+    const ok = await confirm({
+      title: "Xoá phòng ban",
+      message: "Bạn có chắc muốn xoá phòng ban này? Các nhân viên trực thuộc có thể bị ảnh hưởng.",
+      confirmLabel: "Xoá",
+      variant: "danger",
+    });
+    if (!ok) return;
     deleteDept.mutate(id);
   };
 
@@ -81,6 +90,7 @@ export default function DepartmentMgmt() {
 
   return (
     <div className="p-4">
+      {ConfirmUI}
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-gray-800">Cơ cấu Phòng ban</h3>
         <button onClick={openAddModal} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-md active:scale-95">

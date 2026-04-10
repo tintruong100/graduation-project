@@ -14,6 +14,7 @@ import {
 } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
 import { employeeSchema, type EmployeeFormValues } from "@/validations/employee.schema";
+import { useConfirm } from "@/hooks/useConfirm";
 import type { AuthUser } from "@/types";
 
 // Di chuyển Interface ra ngoài component để tái sử dụng nếu cần
@@ -62,6 +63,8 @@ export default function EmployeeMgmt() {
   const updateEmployee = useUpdateEmployee(editId);
   const deleteEmployee = useDeleteEmployee();
 
+  const { confirm, ConfirmUI } = useConfirm();
+
   const {
     register,
     handleSubmit,
@@ -81,8 +84,14 @@ export default function EmployeeMgmt() {
   const watchedRole = watch("role");
   const watchedIsActive = watch("is_active");
 
-  const handleDelete = (id: string) => {
-    if (!confirm("Bạn có chắc muốn xoá nhân viên này?")) return;
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: "Xoá nhân viên",
+      message: "Bạn có chắc muốn xoá nhân viên này? Hành động này không thể hoàn tác.",
+      confirmLabel: "Xoá",
+      variant: "danger",
+    });
+    if (!ok) return;
     deleteEmployee.mutate(id);
   };
 
@@ -168,6 +177,7 @@ export default function EmployeeMgmt() {
 
   return (
     <div className="p-4">
+      {ConfirmUI}
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
