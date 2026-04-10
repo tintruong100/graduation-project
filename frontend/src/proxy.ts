@@ -4,7 +4,9 @@
  *
  * Rules:
  *  - Unauthenticated users hitting /dashboard/* → redirect to /login
- *  - Authenticated users hitting /login → redirect to /dashboard
+ *  - Authenticated users hitting /login → redirect to role-based landing page
+ *  - Authenticated users hitting /dashboard (exact) → redirect to role-based landing page
+ *    (prevents the Router from seeing an intermediate route, avoiding the hooks violation)
  *  - Role-based route protection (e.g., /dashboard/overview → ADMIN only)
  */
 
@@ -22,12 +24,25 @@ const ADMIN_ONLY_PATHS = [
 
 const ADMIN_MANAGER_PATHS = ["/dashboard/employees", "/dashboard/leave-ot"];
 
+function decodeRole(token: string): string | null {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64url").toString(),
+    );
+    return (payload.role as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function getRoleLandingPage(role: string | null): string {
+  if (role === "ADMIN") return "/dashboard/overview";
+  if (role === "MANAGER") return "/dashboard/employees";
+  return "/dashboard/profile";
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Read token from zustand-persisted localStorage via cookie or
-  // from a dedicated auth cookie set at login.
-  // We read from the "hrm-token" cookie (set explicitly at login by the client).
   const token = request.cookies.get("hrm-token")?.value;
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
@@ -40,35 +55,44 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // ─── Already authenticated → skip login page ─────────────────────────────
+  // ─── Authenticated on /dashboard (exact) → redirect to role landing page ──
+  // Avoids the React Router "Rendered more hooks" error caused by the
+  // server component redirect changing route segment depth mid-render.
+  if (pathname === "/dashboard" && token) {
+    const role = decodeRole(token);
+    if (!role) {
+      const res = NextResponse.redirect(new URL("/login", request.url));
+      res.cookies.delete("hrm-token");
+      return res;
+    }
+    return NextResponse.redirect(new URL(getRoleLandingPage(role), request.url));
+  }
+
+  // ─── Already authenticated → skip public pages ───────────────────────────
   if (isPublic && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const role = decodeRole(token);
+    return NextResponse.redirect(new URL(getRoleLandingPage(role), request.url));
   }
 
   // ─── Role-based protection ────────────────────────────────────────────────
   if (token && isDashboard) {
-    try {
-      const payload = JSON.parse(
-        Buffer.from(token.split(".")[1], "base64url").toString(),
-      );
-      const role: string = payload.role;
+    const role = decodeRole(token);
+    if (!role) {
+      const res = NextResponse.redirect(new URL("/login", request.url));
+      res.cookies.delete("hrm-token");
+      return res;
+    }
 
-      if (ADMIN_ONLY_PATHS.some((p) => pathname.startsWith(p)) && role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/dashboard/profile", request.url));
-      }
+    if (ADMIN_ONLY_PATHS.some((p) => pathname.startsWith(p)) && role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard/profile", request.url));
+    }
 
-      if (
-        ADMIN_MANAGER_PATHS.some((p) => pathname.startsWith(p)) &&
-        role !== "ADMIN" &&
-        role !== "MANAGER"
-      ) {
-        return NextResponse.redirect(new URL("/dashboard/profile", request.url));
-      }
-    } catch {
-      // Malformed token → clear and redirect
-      const response = NextResponse.redirect(new URL("/login", request.url));
-      response.cookies.delete("hrm-token");
-      return response;
+    if (
+      ADMIN_MANAGER_PATHS.some((p) => pathname.startsWith(p)) &&
+      role !== "ADMIN" &&
+      role !== "MANAGER"
+    ) {
+      return NextResponse.redirect(new URL("/dashboard/profile", request.url));
     }
   }
 
@@ -77,6 +101,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/dashboard",        // exact match — handles root redirect without server component
     "/dashboard/:path*",
     "/login",
     "/register",
