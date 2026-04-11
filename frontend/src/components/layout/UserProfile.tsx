@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faKey, faRightFromBracket, faXmark, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faUserCircle, faKey, faRightFromBracket, faXmark, faChevronDown, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { useChangePassword } from "@/hooks/useAuth";
 import { changePasswordSchema, type ChangePasswordFormValues } from "@/validations/changePassword.schema";
 
@@ -21,6 +21,9 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const {
         register,
@@ -74,6 +77,9 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
                             onClick={() => {
                                 setIsDropdownOpen(false);
                                 reset();
+                                setShowOldPassword(false);
+                                setShowNewPassword(false);
+                                setShowConfirmPassword(false);
                                 setIsModalOpen(true);
                             }}
                             className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3 font-medium"
@@ -113,32 +119,62 @@ export default function UserProfile({ userName, onLogout }: UserProfileProps) {
                             <form onSubmit={handleSubmit(onPasswordSubmit)} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mật khẩu hiện tại</label>
-                                    <input
-                                        type="password"
-                                        {...register("oldPassword")}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="Nhập mật khẩu đang dùng"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showOldPassword ? "text" : "password"}
+                                            {...register("oldPassword")}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Nhập mật khẩu đang dùng"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowOldPassword(v => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            <FontAwesomeIcon icon={showOldPassword ? faEyeSlash : faEye} size="sm" />
+                                        </button>
+                                    </div>
                                     {errors.oldPassword && <p className="text-red-500 text-xs mt-1">{errors.oldPassword.message}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mật khẩu mới</label>
-                                    <input
-                                        type="password"
-                                        {...register("newPassword")}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="Tối thiểu 6 ký tự"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showNewPassword ? "text" : "password"}
+                                            {...register("newPassword")}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Tối thiểu 6 ký tự"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword(v => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            <FontAwesomeIcon icon={showNewPassword ? faEyeSlash : faEye} size="sm" />
+                                        </button>
+                                    </div>
                                     {errors.newPassword && <p className="text-red-500 text-xs mt-1">{errors.newPassword.message}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Xác nhận mật khẩu mới</label>
-                                    <input
-                                        type="password"
-                                        {...register("confirmPassword")}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="Nhập lại mật khẩu mới"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            {...register("confirmPassword")}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Nhập lại mật khẩu mới"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(v => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            <FontAwesomeIcon icon={showConfirmPassword ? faEyeSlash : faEye} size="sm" />
+                                        </button>
+                                    </div>
                                     {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
                                 </div>
 
