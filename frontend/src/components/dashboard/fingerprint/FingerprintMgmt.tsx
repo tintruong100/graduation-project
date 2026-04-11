@@ -13,6 +13,7 @@ import {
 import { useEmployees } from "@/hooks/useEmployees";
 import { fingerprintSchema, type FingerprintFormValues } from "@/validations/fingerprint.schema";
 import { useConfirm } from "@/hooks/useConfirm";
+import { Table, type Column } from "@/components/ui/Table";
 import type { Fingerprint } from "@/types";
 
 interface Employee {
@@ -124,7 +125,63 @@ export default function FingerprintMgmt() {
         }
     };
 
-    if (loading) return <div className="py-8 text-center text-gray-500 font-medium">Đang tải dữ liệu vân tay...</div>;
+    if (loading) return null; // loading.tsx handles skeleton
+
+    const fpColumns: Column<Fingerprint>[] = [
+        {
+            key: "index",
+            header: "STT",
+            className: "w-14",
+            render: (_v, _r, index) => <span className="text-gray-500">{index + 1}</span>,
+        },
+        {
+            key: "employee_code",
+            header: "Mã NV",
+            render: (_v, fp) => <span className="font-mono text-blue-600">{fp.employee?.employee_code || "N/A"}</span>,
+        },
+        {
+            key: "full_name",
+            header: "Nhân Viên",
+            render: (_v, fp) => (
+                <div>
+                    <div className="text-sm font-semibold text-gray-800">{fp.employee?.full_name || "Nhân viên đã xóa"}</div>
+                    <div className="text-xs text-gray-500">Ngày tạo: {formatDate(fp.createdAt)}</div>
+                </div>
+            ),
+        },
+        {
+            key: "finger_name",
+            header: "Ngón tay",
+            render: (_v, fp) => <span className="text-gray-700">{fp.finger_name}</span>,
+        },
+        {
+            key: "sensor_id",
+            header: "ID Cảm biến (AS608)",
+            render: (_v, fp) => (
+                <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg font-mono font-semibold">
+                    #{fp.sensor_id}
+                </span>
+            ),
+        },
+        {
+            key: "actions",
+            header: "Thao tác",
+            className: "text-center",
+            render: (_v, fp) => (
+                <div className="flex items-center justify-center gap-4">
+                    <button onClick={() => openViewModal(fp)} className="text-green-500 hover:text-green-700 hover:scale-110 transition-all" title="Xem chi tiết">
+                        <FontAwesomeIcon icon={faEye} size="lg" />
+                    </button>
+                    <button onClick={() => openEditModal(fp)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Chỉnh sửa">
+                        <FontAwesomeIcon icon={faPenToSquare} size="lg" />
+                    </button>
+                    <button onClick={() => handleDelete(fp.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa dữ liệu">
+                        <FontAwesomeIcon icon={faTrashCan} size="lg" />
+                    </button>
+                </div>
+            ),
+        },
+    ];
 
     return (
         <div className="p-4">
@@ -156,55 +213,13 @@ export default function FingerprintMgmt() {
             </div>
 
             {/* TABLE */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">STT</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Mã NV</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Nhân Viên</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Ngón tay</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">ID Cảm biến (AS608)</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredData.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="p-10 text-center text-gray-400">Không tìm thấy dữ liệu phù hợp</td>
-                            </tr>
-                        ) : (
-                            filteredData.map((fp, index) => (
-                                <tr key={fp.id} className="hover:bg-blue-50/30 transition-colors">
-                                    <td className="p-4 text-sm text-gray-500">{index + 1}</td>
-                                    <td className="p-4 text-sm font-mono text-blue-600">{fp.employee?.employee_code || "N/A"}</td>
-                                    <td className="p-4">
-                                        <div className="text-sm font-semibold text-gray-800">{fp.employee?.full_name || "Nhân viên đã xóa"}</div>
-                                        <div className="text-xs text-gray-500">Ngày tạo: {formatDate(fp.createdAt)}</div>
-                                    </td>
-                                    <td className="p-4 text-sm text-gray-700">{fp.finger_name}</td>
-                                    <td className="p-4 text-sm">
-                                        <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg font-mono font-semibold">
-                                            #{fp.sensor_id}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-sm text-center space-x-5">
-                                        <button onClick={() => openViewModal(fp)} className="text-green-500 hover:text-green-700 hover:scale-110 transition-all" title="Xem chi tiết">
-                                            <FontAwesomeIcon icon={faEye} size="lg" />
-                                        </button>
-                                        <button onClick={() => openEditModal(fp)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Chỉnh sửa">
-                                            <FontAwesomeIcon icon={faPenToSquare} size="lg" />
-                                        </button>
-                                        <button onClick={() => handleDelete(fp.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa dữ liệu">
-                                            <FontAwesomeIcon icon={faTrashCan} size="lg" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <Table<Fingerprint>
+                data={filteredData}
+                columns={fpColumns}
+                rowKey="id"
+                emptyMessage="Không tìm thấy dữ liệu phù hợp"
+                defaultPageSize={10}
+            />
 
             {/* KHÔI PHỤC LẠI: MODAL XEM CHI TIẾT */}
             {isViewModalOpen && viewData && (

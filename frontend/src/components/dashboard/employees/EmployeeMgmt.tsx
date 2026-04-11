@@ -15,6 +15,7 @@ import {
 import { useDepartments } from "@/hooks/useDepartments";
 import { employeeSchema, type EmployeeFormValues } from "@/validations/employee.schema";
 import { useConfirm } from "@/hooks/useConfirm";
+import { Table, type Column } from "@/components/ui/Table";
 import type { AuthUser, Department } from "@/types";
 
 // Di chuyển Interface ra ngoài component để tái sử dụng nếu cần
@@ -173,7 +174,70 @@ export default function EmployeeMgmt() {
   };
   // ---------------------------------------------
 
-  if (loading) return <div className="py-8 text-center text-gray-500 font-medium">Đang tải dữ liệu nhân viên...</div>;
+  if (loading) return null; // loading.tsx handles skeleton
+
+  const empColumns: Column<Employee>[] = [
+    {
+      key: "index",
+      header: "STT",
+      className: "w-14",
+      render: (_v, _r, index) => <span className="text-gray-500">{index + 1}</span>,
+    },
+    {
+      key: "employee_code",
+      header: "Mã NV",
+      render: (_v, emp) => <span className="font-mono text-blue-600">{emp.employee_code}</span>,
+    },
+    {
+      key: "full_name",
+      header: "Họ Tên",
+      render: (_v, emp) => (
+        <div>
+          <div className="text-sm font-semibold text-gray-800">{emp.full_name}</div>
+          <div className="text-xs text-gray-500">
+            {emp.email}
+            {String(emp.is_active) === "false" && <span className="text-red-500 ml-1">(Đã nghỉ)</span>}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "department",
+      header: "Phòng Ban",
+      render: (_v, emp) => <span className="text-gray-600">{emp.department?.name || "Chưa set"}</span>,
+    },
+    {
+      key: "role",
+      header: "Vai trò",
+      render: (_v, emp) => (
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          emp.role === "ADMIN" ? "bg-red-100 text-red-700" :
+          emp.role === "MANAGER" ? "bg-blue-100 text-blue-700" :
+          "bg-gray-100 text-gray-700"
+        }`}>
+          {emp.role}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Thao tác",
+      className: "text-center",
+      render: (_v, emp) => (
+        <div className="flex items-center justify-center gap-4">
+          <button onClick={() => openViewModal(emp)} className="text-green-500 hover:text-green-700 hover:scale-110 transition-all" title="Xem chi tiết">
+            <FontAwesomeIcon icon={faEye} size="lg" />
+          </button>
+          <button onClick={() => openEditModal(emp)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Chỉnh sửa">
+            <FontAwesomeIcon icon={faPenToSquare} size="lg" />
+          </button>
+          <button onClick={() => handleDelete(emp.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa nhân viên">
+            <FontAwesomeIcon icon={faTrashCan} size="lg" />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="p-4">
@@ -218,71 +282,13 @@ export default function EmployeeMgmt() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="p-4 font-semibold text-gray-600 text-sm">STT</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Mã NV</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Họ Tên</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Phòng Ban</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Vai trò</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm text-center">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredEmployees.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-10 text-center text-gray-400">Không tìm thấy dữ liệu phù hợp</td>
-              </tr>
-            ) : (
-              filteredEmployees.map((emp, index) => (
-                <tr key={emp.id} className={`hover:bg-blue-50/30 transition-colors ${String(emp.is_active) === "false" ? "bg-gray-50 opacity-70" : ""}`}>
-                  <td className="p-4 text-sm text-gray-500">{index + 1}</td>
-                  <td className="p-4 text-sm font-mono text-blue-600">{emp.employee_code}</td>
-                  <td className="p-4">
-                    <div className="text-sm font-semibold text-gray-800">{emp.full_name}</div>
-                    <div className="text-xs text-gray-500">{emp.email} {String(emp.is_active) === "false" && <span className="text-red-500 ml-1">(Đã nghỉ)</span>}</div>
-                  </td>
-                  <td className="p-4 text-sm text-gray-600">{emp.department?.name || "Chưa set"}</td>
-                  <td className="p-4 text-sm">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${emp.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
-                      emp.role === 'MANAGER' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                      {emp.role}
-                    </span>
-                  </td>
-                  <td className="p-4 text-sm text-center space-x-5">
-                    <button
-                      onClick={() => openViewModal(emp)}
-                      className="text-green-500 hover:text-green-700 hover:scale-110 transition-all"
-                      title="Xem chi tiết"
-                    >
-                      <FontAwesomeIcon icon={faEye} size="lg" />
-                    </button>
-
-                    <button
-                      onClick={() => openEditModal(emp)}
-                      className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all"
-                      title="Chỉnh sửa"
-                    >
-                      <FontAwesomeIcon icon={faPenToSquare} size="lg" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(emp.id)}
-                      className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
-                      title="Xóa nhân viên"
-                    >
-                      <FontAwesomeIcon icon={faTrashCan} size="lg" />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table<Employee>
+        data={filteredEmployees}
+        columns={empColumns}
+        rowKey="id"
+        emptyMessage="Không tìm thấy dữ liệu phù hợp"
+        defaultPageSize={10}
+      />
 
       {/* MODAL XEM CHI TIẾT */}
       {isViewModalOpen && viewEmployee && (

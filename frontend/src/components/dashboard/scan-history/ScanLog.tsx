@@ -6,6 +6,7 @@ import { faEye, faTrashCan, faHistory, faClock } from '@fortawesome/free-solid-s
 import { useScanLogs, useDeleteScanLog } from "@/hooks/useScanLogs";
 import type { ScanLog } from "@/types";
 import { useConfirm } from "@/hooks/useConfirm";
+import { Table, type Column } from "@/components/ui/Table";
 
 export default function ScanHistoryMgmt() {
     const { data: scanLogs = [], isLoading: loading } = useScanLogs();
@@ -51,7 +52,63 @@ export default function ScanHistoryMgmt() {
         }
     };
 
-    if (loading) return <div className="py-8 text-center text-gray-500 font-medium">Đang tải dữ liệu lịch sử quét...</div>;
+    if (loading) return null; // loading.tsx handles skeleton
+
+    const scanColumns: Column<ScanLog>[] = [
+        {
+            key: "index",
+            header: "STT",
+            className: "w-14",
+            render: (_v, _r, index) => <span className="text-gray-500">{index + 1}</span>,
+        },
+        {
+            key: "status",
+            header: "Trạng thái",
+            render: (_v, log) =>
+                log.status === "SUCCESS" ? (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">HỢP LỆ</span>
+                ) : (
+                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">THẤT BẠI</span>
+                ),
+        },
+        {
+            key: "employee",
+            header: "Nhân Viên",
+            render: (_v, log) => (
+                <div>
+                    <div className="text-sm font-semibold text-gray-800">
+                        {log.employee?.full_name || <span className="text-red-500">Người lạ (Chưa ĐK)</span>}
+                    </div>
+                    <div className="text-xs text-gray-500">{log.employee?.employee_code || "N/A"}</div>
+                </div>
+            ),
+        },
+        {
+            key: "scan_time",
+            header: "Thời gian quét",
+            render: (_v, log) => (
+                <span className="text-gray-700 font-medium">
+                    <FontAwesomeIcon icon={faClock} className="mr-2 text-gray-400" />
+                    {formatDate(log.scan_time)}
+                </span>
+            ),
+        },
+        {
+            key: "actions",
+            header: "Thao tác",
+            className: "text-center",
+            render: (_v, log) => (
+                <div className="flex items-center justify-center gap-4">
+                    <button onClick={() => openViewModal(log)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Xem chi tiết">
+                        <FontAwesomeIcon icon={faEye} size="lg" />
+                    </button>
+                    <button onClick={() => handleDelete(log.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa dữ liệu">
+                        <FontAwesomeIcon icon={faTrashCan} size="lg" />
+                    </button>
+                </div>
+            ),
+        },
+    ];
 
     return (
         <div className="p-4">
@@ -79,58 +136,13 @@ export default function ScanHistoryMgmt() {
             </div>
 
             {/* TABLE */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">STT</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Trạng thái</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Nhân Viên</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Thời gian quét</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredData.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="p-10 text-center text-gray-400">Không tìm thấy dữ liệu phù hợp</td>
-                            </tr>
-                        ) : (
-                            filteredData.map((log, index) => (
-                                <tr key={log.id} className="hover:bg-indigo-50/30 transition-colors">
-                                    <td className="p-4 text-sm text-gray-500">{index + 1}</td>
-                                    <td className="p-4 text-sm">
-                                        {log.status === 'SUCCESS' ? (
-                                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">HỢP LỆ</span>
-                                        ) : (
-                                            <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">THẤT BẠI</span>
-                                        )}
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="text-sm font-semibold text-gray-800">
-                                            {log.employee?.full_name || <span className="text-red-500">Người lạ (Chưa ĐK)</span>}
-                                        </div>
-                                        <div className="text-xs text-gray-500">{log.employee?.employee_code || "N/A"}</div>
-                                    </td>
-                                    <td className="p-4 text-sm text-gray-700 font-medium">
-                                        <FontAwesomeIcon icon={faClock} className="mr-2 text-gray-400" />
-                                        {formatDate(log.scan_time)}
-                                    </td>
-                                    <td className="p-4 text-sm text-center space-x-5">
-                                        <button onClick={() => openViewModal(log)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Xem chi tiết">
-                                            <FontAwesomeIcon icon={faEye} size="lg" />
-                                        </button>
-
-                                        <button onClick={() => handleDelete(log.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa dữ liệu">
-                                            <FontAwesomeIcon icon={faTrashCan} size="lg" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <Table<ScanLog>
+                data={filteredData}
+                columns={scanColumns}
+                rowKey="id"
+                emptyMessage="Không tìm thấy dữ liệu phù hợp"
+                defaultPageSize={25}
+            />
 
             {/* MODAL XEM CHI TIẾT */}
             {/* KHÔI PHỤC LẠI: MODAL XEM CHI TIẾT THEO CHUẨN ĐỒNG BỘ */}

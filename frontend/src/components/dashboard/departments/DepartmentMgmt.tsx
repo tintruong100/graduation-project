@@ -8,6 +8,7 @@ import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepa
 import { useEmployees } from "@/hooks/useEmployees";
 import { departmentSchema, type DepartmentFormValues } from "@/validations/department.schema";
 import { useConfirm } from "@/hooks/useConfirm";
+import { Table, type Column } from "@/components/ui/Table";
 import type { Employee } from "@/types";
 
 interface Department {
@@ -87,7 +88,76 @@ export default function DepartmentMgmt() {
     }
   };
 
-  if (loading) return <div className="py-8 text-center text-gray-500 font-medium">Đang tải dữ liệu phòng ban...</div>;
+  if (loading) return null; // loading.tsx handles skeleton
+
+  const columns: Column<Department>[] = [
+    {
+      key: "index",
+      header: "STT",
+      className: "w-14",
+      render: (_v, _r, index) => <span className="text-gray-500">{index + 1}</span>,
+    },
+    {
+      key: "name",
+      header: "Tên phòng ban",
+      render: (_v, dept) => <span className="font-bold text-gray-800">{dept.name}</span>,
+    },
+    {
+      key: "manager",
+      header: "Trưởng phòng",
+      render: (_v, dept) =>
+        dept.manager ? (
+          <div>
+            <p className="font-medium text-gray-800">{dept.manager.full_name}</p>
+            <p className="text-xs text-gray-400">{dept.manager.employee_code}</p>
+          </div>
+        ) : (
+          <span className="text-gray-400 italic text-xs">Chưa bổ nhiệm</span>
+        ),
+    },
+    {
+      key: "employees",
+      header: "Số lượng NV",
+      className: "text-center",
+      render: (_v, dept) => (
+        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold text-xs">
+          {dept.employees?.length || 0}
+        </span>
+      ),
+    },
+    {
+      key: "start_time",
+      header: "Thời gian LV",
+      render: (_v, dept) => (
+        <span className="font-medium text-gray-600">
+          {dept.start_time.slice(0, 5)} - {dept.end_time.slice(0, 5)}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Thao tác",
+      className: "text-center",
+      render: (_v, dept) => (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => openEditModal(dept)}
+            className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all"
+            title="Chỉnh sửa"
+          >
+            <FontAwesomeIcon icon={faPenToSquare} size="lg" />
+          </button>
+          <button
+            onClick={() => handleDelete(dept.id)}
+            className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
+            title="Xóa phòng ban"
+          >
+            <FontAwesomeIcon icon={faTrashCan} size="lg" />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="p-4">
@@ -99,69 +169,13 @@ export default function DepartmentMgmt() {
         </button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="p-4 font-semibold text-gray-600 text-sm">STT</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Tên phòng ban</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Trưởng phòng</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm text-center">Số lượng NV</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Thời gian LV</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm text-center">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {departments.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-10 text-center text-gray-400">Chưa có dữ liệu phòng ban</td>
-              </tr>
-            ) : (
-              departments.map((dept, index) => (
-                <tr key={dept.id} className="hover:bg-blue-50/30 transition-colors">
-                  <td className="p-4 text-sm text-gray-500">{index + 1}</td>
-                  <td className="p-4 text-sm font-bold text-gray-800">{dept.name}</td>
-                  <td className="p-4 text-sm text-gray-600">
-                    {dept.manager ? (
-                      <div>
-                        <p className="font-medium text-gray-800">{dept.manager.full_name}</p>
-                        <p className="text-xs text-gray-400">{dept.manager.employee_code}</p>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 italic text-xs">Chưa bổ nhiệm</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-sm text-center">
-                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold text-xs">
-                      {dept.employees?.length || 0}
-                    </span>
-                  </td>
-                  <td className="p-4 text-sm text-gray-600 font-medium">
-                    {dept.start_time.slice(0, 5)} - {dept.end_time.slice(0, 5)}
-                  </td>
-                  <td className="p-4 text-sm text-center space-x-4">
-                    <button
-                      onClick={() => openEditModal(dept)}
-                      className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all"
-                      title="Chỉnh sửa"
-                    >
-                      <FontAwesomeIcon icon={faPenToSquare} size="lg" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(dept.id)}
-                      className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
-                      title="Xóa phòng ban"
-                    >
-                      <FontAwesomeIcon icon={faTrashCan} size="lg" />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table<Department>
+        data={departments}
+        columns={columns}
+        rowKey="id"
+        emptyMessage="Chưa có dữ liệu phòng ban"
+        paginate={false}
+      />
 
       {/* Modal */}
       {isModalOpen && (
