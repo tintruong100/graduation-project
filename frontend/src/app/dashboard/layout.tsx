@@ -11,7 +11,6 @@ import {
     faClockRotateLeft, faFingerprint, faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import UserProfile from "@/components/layout/UserProfile";
-import { TopProgressBar } from "@/components/ui/TopProgressBar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -82,9 +81,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="flex h-screen bg-slate-100 overflow-hidden">
-            {/* ── Top progress bar (route transition indicator) ── */}
-            <TopProgressBar />
-
             {/* ── Mobile overlay ── */}
             {isMobileMenuOpen && (
                 <div
