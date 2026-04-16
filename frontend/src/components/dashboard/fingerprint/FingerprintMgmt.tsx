@@ -1,23 +1,20 @@
 "use client";
-import { useState, useEffect } from "react";
-import { fetchWithAuth } from "@/utils/api";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare, faTrashCan, faFingerprint } from '@fortawesome/free-solid-svg-icons';
-
-interface Fingerprint {
-    id: string;
-    employee_id: string;
-    finger_name: string;
-    sensor_id: number;
-    template_data?: string;
-    is_active: boolean;
-    createdAt?: string;
-    employee?: {
-        id: string;
-        full_name: string;
-        employee_code: string;
-    };
-}
+import {
+    useFingerprints,
+    useCreateFingerprint,
+    useUpdateFingerprint,
+    useDeleteFingerprint,
+} from "@/hooks/useFingerprints";
+import { useEmployees } from "@/hooks/useEmployees";
+import { fingerprintSchema, type FingerprintFormValues } from "@/validations/fingerprint.schema";
+import { useConfirm } from "@/hooks/useConfirm";
+import { Table, type Column } from "@/components/ui/Table";
+import type { Fingerprint } from "@/types";
 
 interface Employee {
     id: string;
@@ -26,89 +23,62 @@ interface Employee {
 }
 
 export default function FingerprintMgmt() {
-    const [fingerprints, setFingerprints] = useState<Fingerprint[]>([]);
-    const [employees, setEmployees] = useState<Employee[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: fingerprints = [], isLoading: fpLoading } = useFingerprints();
+    const { data: employees = [], isLoading: empLoading } = useEmployees();
+    const deleteFingerprint = useDeleteFingerprint();
+
+    const loading = fpLoading || empLoading;
+
     const [searchTerm, setSearchTerm] = useState("");
     const [isScanning, setIsScanning] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
+    const [editId, setEditId] = useState("");
 
     // States cho modal XEM CHI TIẾT
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [viewData, setViewData] = useState<Fingerprint | null>(null);
 
-    const [formData, setFormData] = useState({
-        id: "",
-        employee_id: "",
-        finger_name: "",
-        sensor_id: "",
-        template_data: "",
+    const createFingerprint = useCreateFingerprint();
+    const updateFingerprint = useUpdateFingerprint(editId);
+
+    const { confirm, ConfirmUI } = useConfirm();
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<FingerprintFormValues>({
+        resolver: zodResolver(fingerprintSchema),
+        defaultValues: { employee_id: "", finger_name: "" },
     });
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [fingerRes, empRes] = await Promise.all([
-                fetchWithAuth("/fingerprints"),
-                fetchWithAuth("/employees")
-            ]);
-
-            if (fingerRes.ok) {
-                const body = await fingerRes.json();
-                setFingerprints(body.data || []);
-            }
-            if (empRes.ok) {
-                const body = await empRes.json();
-                setEmployees(body.data || []);
-            }
-        } catch (e) {
-            console.error("Lỗi tải dữ liệu:", e);
-            setFingerprints([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
     const handleDelete = async (id: string) => {
-        if (!confirm("Bạn có chắc muốn xoá dữ liệu vân tay này?")) return;
-        try {
-            const res = await fetchWithAuth(`/fingerprints/${id}`, { method: "DELETE" });
-            if (res.ok) {
-                loadData();
-            } else {
-                alert("Có lỗi xảy ra khi xoá.");
-            }
-        } catch (e) {
-            console.error(e);
-        }
+        const ok = await confirm({
+            title: "Xoá dữ liệu vân tay",
+            message: "Bạn có chắc muốn xoá dữ liệu vân tay này? Hành động này không thể hoàn tác.",
+            confirmLabel: "Xoá",
+            variant: "danger",
+        });
+        if (!ok) return;
+        deleteFingerprint.mutate(id);
     };
 
     const openAddModal = () => {
         setIsEdit(false);
-        setFormData({
-            id: "",
-            employee_id: "",
-            finger_name: "",
-            sensor_id: "",
-            template_data: "",
-        });
+        setEditId("");
+        reset({ employee_id: "", finger_name: "" });
         setIsModalOpen(true);
     };
 
     const openEditModal = (fp: Fingerprint) => {
         setIsEdit(true);
-        setFormData({
-            id: fp.id,
+        setEditId(fp.id);
+        reset({
             employee_id: fp.employee_id,
             finger_name: fp.finger_name,
-            sensor_id: String(fp.sensor_id),
-            template_data: fp.template_data || "",
         });
         setIsModalOpen(true);
     };
@@ -118,55 +88,22 @@ export default function FingerprintMgmt() {
         setIsViewModalOpen(true);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const onSubmit = (values: FingerprintFormValues) => {
         if (isEdit) {
-            try {
-                const res = await fetchWithAuth(`/fingerprints/${formData.id}`, {
-                    method: "PUT",
-                    body: JSON.stringify({
-                        finger_name: formData.finger_name,
-                    }),
-                });
-                const body = await res.json();
-                if (res.ok) {
-                    alert("Cập nhật thông tin thành công!");
-                    setIsModalOpen(false);
-                    loadData();
-                } else {
-                    alert(body.message || "Lỗi cập nhật!");
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Lỗi kết nối.");
-            }
+            updateFingerprint.mutate(
+                { finger_name: values.finger_name },
+                { onSuccess: () => setIsModalOpen(false) }
+            );
         } else {
             // LUỒNG TẠO MỚI (QUÉT VÀ LƯU)
             setIsScanning(true);
-            try {
-                const res = await fetchWithAuth(`/fingerprints`, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        employee_id: formData.employee_id,
-                        finger_name: formData.finger_name,
-                    }),
-                });
-
-                const body = await res.json();
-                if (res.ok) {
-                    alert("Đăng ký vân tay thành công!");
+            createFingerprint.mutate(values, {
+                onSuccess: () => {
                     setIsModalOpen(false);
-                    loadData();
-                } else {
-                    alert(body.message + "\n" + body.error || "Quá trình quét thất bại hoặc hết thời gian chờ!");
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Lỗi kết nối tới thiết bị quét.");
-            } finally {
-                setIsScanning(false);
-            }
+                    setIsScanning(false);
+                },
+                onError: () => setIsScanning(false),
+            });
         }
     };
 
@@ -188,10 +125,67 @@ export default function FingerprintMgmt() {
         }
     };
 
-    if (loading) return <div className="py-8 text-center text-gray-500 font-medium">Đang tải dữ liệu vân tay...</div>;
+    if (loading) return null; // loading.tsx handles skeleton
+
+    const fpColumns: Column<Fingerprint>[] = [
+        {
+            key: "index",
+            header: "STT",
+            className: "w-14",
+            render: (_v, _r, index) => <span className="text-gray-500">{index + 1}</span>,
+        },
+        {
+            key: "employee_code",
+            header: "Mã NV",
+            render: (_v, fp) => <span className="font-mono text-blue-600">{fp.employee?.employee_code || "N/A"}</span>,
+        },
+        {
+            key: "full_name",
+            header: "Nhân Viên",
+            render: (_v, fp) => (
+                <div>
+                    <div className="text-sm font-semibold text-gray-800">{fp.employee?.full_name || "Nhân viên đã xóa"}</div>
+                    <div className="text-xs text-gray-500">Ngày tạo: {formatDate(fp.createdAt)}</div>
+                </div>
+            ),
+        },
+        {
+            key: "finger_name",
+            header: "Ngón tay",
+            render: (_v, fp) => <span className="text-gray-700">{fp.finger_name}</span>,
+        },
+        {
+            key: "sensor_id",
+            header: "ID Cảm biến (AS608)",
+            render: (_v, fp) => (
+                <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg font-mono font-semibold">
+                    #{fp.sensor_id}
+                </span>
+            ),
+        },
+        {
+            key: "actions",
+            header: "Thao tác",
+            className: "text-center",
+            render: (_v, fp) => (
+                <div className="flex items-center justify-center gap-4">
+                    <button onClick={() => openViewModal(fp)} className="text-green-500 hover:text-green-700 hover:scale-110 transition-all" title="Xem chi tiết">
+                        <FontAwesomeIcon icon={faEye} size="lg" />
+                    </button>
+                    <button onClick={() => openEditModal(fp)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Chỉnh sửa">
+                        <FontAwesomeIcon icon={faPenToSquare} size="lg" />
+                    </button>
+                    <button onClick={() => handleDelete(fp.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa dữ liệu">
+                        <FontAwesomeIcon icon={faTrashCan} size="lg" />
+                    </button>
+                </div>
+            ),
+        },
+    ];
 
     return (
         <div className="p-4">
+            {ConfirmUI}
             {/* HEADER */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
@@ -219,55 +213,13 @@ export default function FingerprintMgmt() {
             </div>
 
             {/* TABLE */}
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">STT</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Mã NV</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Nhân Viên</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">Ngón tay</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm">ID Cảm biến (AS608)</th>
-                            <th className="p-4 font-semibold text-gray-600 text-sm text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredData.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="p-10 text-center text-gray-400">Không tìm thấy dữ liệu phù hợp</td>
-                            </tr>
-                        ) : (
-                            filteredData.map((fp, index) => (
-                                <tr key={fp.id} className="hover:bg-blue-50/30 transition-colors">
-                                    <td className="p-4 text-sm text-gray-500">{index + 1}</td>
-                                    <td className="p-4 text-sm font-mono text-blue-600">{fp.employee?.employee_code || "N/A"}</td>
-                                    <td className="p-4">
-                                        <div className="text-sm font-semibold text-gray-800">{fp.employee?.full_name || "Nhân viên đã xóa"}</div>
-                                        <div className="text-xs text-gray-500">Ngày tạo: {formatDate(fp.createdAt)}</div>
-                                    </td>
-                                    <td className="p-4 text-sm text-gray-700">{fp.finger_name}</td>
-                                    <td className="p-4 text-sm">
-                                        <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg font-mono font-semibold">
-                                            #{fp.sensor_id}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-sm text-center space-x-5">
-                                        <button onClick={() => openViewModal(fp)} className="text-green-500 hover:text-green-700 hover:scale-110 transition-all" title="Xem chi tiết">
-                                            <FontAwesomeIcon icon={faEye} size="lg" />
-                                        </button>
-                                        <button onClick={() => openEditModal(fp)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Chỉnh sửa">
-                                            <FontAwesomeIcon icon={faPenToSquare} size="lg" />
-                                        </button>
-                                        <button onClick={() => handleDelete(fp.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa dữ liệu">
-                                            <FontAwesomeIcon icon={faTrashCan} size="lg" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <Table<Fingerprint>
+                data={filteredData}
+                columns={fpColumns}
+                rowKey="id"
+                emptyMessage="Không tìm thấy dữ liệu phù hợp"
+                defaultPageSize={10}
+            />
 
             {/* KHÔI PHỤC LẠI: MODAL XEM CHI TIẾT */}
             {isViewModalOpen && viewData && (
@@ -313,34 +265,31 @@ export default function FingerprintMgmt() {
                     <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
                         <div className="p-6">
                             <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">{isEdit ? "Cập nhật dữ liệu" : "Đăng ký Vân tay"}</h2>
-                            <form onSubmit={handleSubmit} className="space-y-4">
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
                                 {/* Chọn Nhân viên */}
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nhân viên sở hữu</label>
                                     <select
-                                        required
-                                        value={formData.employee_id}
-                                        onChange={e => setFormData({ ...formData, employee_id: e.target.value })}
+                                        {...register("employee_id")}
                                         disabled={isEdit}
                                         className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${isEdit ? "bg-gray-100 cursor-not-allowed" : ""}`}
                                     >
                                         <option value="">-- Chọn nhân viên --</option>
-                                        {employees.map((emp) => (
+                                        {employees.map((emp: Employee) => (
                                             <option key={emp.id} value={emp.id}>
                                                 {emp.employee_code} - {emp.full_name}
                                             </option>
                                         ))}
                                     </select>
+                                    {errors.employee_id && <p className="text-red-500 text-xs mt-1">{errors.employee_id.message}</p>}
                                 </div>
 
                                 {/* Tên Ngón Tay */}
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tên Ngón Tay</label>
                                     <select
-                                        required
-                                        value={formData.finger_name}
-                                        onChange={e => setFormData({ ...formData, finger_name: e.target.value })}
+                                        {...register("finger_name")}
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer"
                                     >
                                         <option value="">-- Chọn ngón tay --</option>
@@ -359,22 +308,23 @@ export default function FingerprintMgmt() {
                                             <option value="Ngón út trái">Ngón út trái</option>
                                         </optgroup>
                                     </select>
+                                    {errors.finger_name && <p className="text-red-500 text-xs mt-1">{errors.finger_name.message}</p>}
                                 </div>
 
                                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
                                     <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}
-                                        disabled={isScanning}
+                                        disabled={isScanning || isSubmitting}
                                         className="px-5 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-semibold transition-colors disabled:opacity-50"
                                     >
                                         Hủy
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={isScanning}
+                                        disabled={isScanning || isSubmitting}
                                         className={`px-6 py-2 rounded-lg font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 text-white
-                                            ${isScanning ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}
+                                            ${isScanning || isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}
                                         `}
                                     >
                                         {isScanning ? (

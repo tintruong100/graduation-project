@@ -1,4 +1,5 @@
 import LoginForm from '../../components/login/LoginForm';
+import Image from 'next/image';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default function LoginPage() {
           <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent" />
 
           <div className="text-center mb-10 mt-2">
-            <img src="./img/logo-iuh.png" alt="Logo" className="mx-auto h-16 w-auto mb-10" />
+            <Image src="/img/logo-iuh.png" alt="Logo IUH" width={64} height={64} className="mx-auto mb-10" priority />
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 mb-3">
               HRM System
             </h1>

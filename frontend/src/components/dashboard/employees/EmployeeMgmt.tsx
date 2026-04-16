@@ -1,8 +1,22 @@
 "use client";
-import { useState, useEffect } from "react";
-import { fetchWithAuth } from "@/utils/api";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuthStore } from "@/store/auth.store";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import {
+  useEmployees,
+  useEmployeesByDepartment,
+  useCreateEmployee,
+  useUpdateEmployee,
+  useDeleteEmployee,
+} from "@/hooks/useEmployees";
+import { useDepartments } from "@/hooks/useDepartments";
+import { employeeSchema, type EmployeeFormValues } from "@/validations/employee.schema";
+import { useConfirm } from "@/hooks/useConfirm";
+import { Table, type Column } from "@/components/ui/Table";
+import type { AuthUser, Department } from "@/types";
 
 // Di chuyển Interface ra ngoài component để tái sử dụng nếu cần
 interface Employee {
@@ -21,9 +35,18 @@ interface Employee {
 }
 
 export default function EmployeeMgmt() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 1. Lấy thông tin user từ Zustand store
+  const currentUser = useAuthStore.getState().user;
+  const isManager = currentUser?.role === "MANAGER";
+  const managerId = isManager ? (currentUser as AuthUser).department_id : undefined;
+
+  // 2. Phân quyền gọi API trực tiếp từ data trong Store
+  const { data: allEmployees = [], isLoading: allEmpLoading } = useEmployees();
+  const { data: deptEmployees = [], isLoading: deptEmpLoading } = useEmployeesByDepartment(managerId || "");
+  const { data: departments = [], isLoading: deptLoading } = useDepartments();
+
+  const employees: Employee[] = (isManager ? deptEmployees : allEmployees) as Employee[];
+  const loading = isManager ? deptEmpLoading : (allEmpLoading || deptLoading);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDept, setFilterDept] = useState("");
@@ -31,110 +54,75 @@ export default function EmployeeMgmt() {
   // States cho form Thêm/Sửa
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState("");
 
   // States cho modal Xem chi tiết
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
 
-  const [formData, setFormData] = useState({
-    id: "",
-    employee_code: "",
-    full_name: "",
-    email: "",
-    password: "",
-    date_of_birth: "",
-    gender: "true",
-    phone_number: "",
-    address: "",
-    position: "",
-    department_id: "",
-    role: "EMPLOYEE",
-    is_active: "true",
+  const createEmployee = useCreateEmployee();
+  const updateEmployee = useUpdateEmployee(editId);
+  const deleteEmployee = useDeleteEmployee();
+
+  const { confirm, ConfirmUI } = useConfirm();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<EmployeeFormValues>({
+    resolver: zodResolver(employeeSchema),
+    defaultValues: {
+      employee_code: "", full_name: "", email: "", password: "",
+      date_of_birth: "", gender: "true", phone_number: "", address: "",
+      position: "", department_id: "", role: "EMPLOYEE", is_active: "true",
+    },
   });
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // 1. Lấy token từ localStorage
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Không tìm thấy token");
-
-      // 2. Giải mã Payload của JWT để lấy thông tin (phần nằm giữa 2 dấu chấm)
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const payload = JSON.parse(window.atob(base64));
-
-      // 3. Phân quyền gọi API trực tiếp từ data trong Token
-      if (payload.role === "ADMIN") {
-        const [empRes, deptRes] = await Promise.all([
-          fetchWithAuth("/employees"),
-          fetchWithAuth("/departments")
-        ]);
-
-        if (empRes.ok) setEmployees((await empRes.json()).data || []);
-        if (deptRes.ok) setDepartments((await deptRes.json()).data || []);
-
-      } else if (payload.role === "MANAGER") {
-        // Đảm bảo trong Token của bạn khi sign ở Backend đã có chứa trường department_id
-        const empRes = await fetchWithAuth(`/employees/${payload.department_id}`);
-
-        if (empRes.ok) setEmployees((await empRes.json()).data || []);;
-      }
-
-    } catch (e) {
-      console.error("Lỗi tải dữ liệu hoặc giải mã token:", e);
-      // Nếu lỗi token thì reset mảng để không sập UI
-      setEmployees([]);
-      setDepartments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const watchedRole = watch("role");
+  const watchedIsActive = watch("is_active");
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xoá nhân viên này?")) return;
-    try {
-      const res = await fetchWithAuth(`/employees/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        loadData();
-      } else {
-        alert("Có lỗi xảy ra khi xoá.");
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    const ok = await confirm({
+      title: "Xoá nhân viên",
+      message: "Bạn có chắc muốn xoá nhân viên này? Hành động này không thể hoàn tác.",
+      confirmLabel: "Xoá",
+      variant: "danger",
+    });
+    if (!ok) return;
+    deleteEmployee.mutate(id);
   };
 
   const openAddModal = () => {
     setIsEdit(false);
-    setFormData({
-      id: "", employee_code: "", full_name: "", email: "", password: "",
+    setEditId("");
+    reset({
+      employee_code: "", full_name: "", email: "", password: "",
       date_of_birth: "", gender: "true", phone_number: "", address: "",
-      position: "", department_id: "", role: "EMPLOYEE", is_active: "true"
+      position: "", department_id: "", role: "EMPLOYEE", is_active: "true",
     });
     setIsModalOpen(true);
   };
 
   const openEditModal = (emp: Employee) => {
     setIsEdit(true);
-    setFormData({
-      id: emp.id,
+    setEditId(emp.id);
+    reset({
       employee_code: emp.employee_code,
       full_name: emp.full_name,
       email: emp.email,
       password: "",
       date_of_birth: emp.date_of_birth ? emp.date_of_birth.split('T')[0] : "",
-      gender: String(emp.gender),
+      gender: String(emp.gender) as "true" | "false",
       phone_number: emp.phone_number || "",
       address: emp.address || "",
       position: emp.position || "",
       department_id: emp.department?.id || "",
-      role: emp.role,
-      is_active: String(emp.is_active)
+      role: emp.role as "ADMIN" | "MANAGER" | "EMPLOYEE",
+      is_active: String(emp.is_active) as "true" | "false",
     });
     setIsModalOpen(true);
   };
@@ -145,36 +133,16 @@ export default function EmployeeMgmt() {
     setIsViewModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const url = isEdit ? `/employees/${formData.id}` : `/employees`;
-      const method = isEdit ? "PUT" : "POST";
-
-      const payload: any = {
-        ...formData,
-        gender: formData.gender === "true"
-      };
-
-      if (isEdit && !payload.password) delete payload.password;
+  const onSubmit = (values: EmployeeFormValues) => {
+    if (isEdit) {
+      const payload: Partial<EmployeeFormValues> = { ...values };
+      if (!payload.password) delete payload.password;
       if (!payload.department_id) delete payload.department_id;
-      if (!isEdit) delete payload.id;
-
-      const res = await fetchWithAuth(url, {
-        method,
-        body: JSON.stringify(payload),
-      });
-
-      const body = await res.json();
-      if (res.ok) {
-        alert(isEdit ? "Cập nhật thành công!" : "Thêm thành công!");
-        setIsModalOpen(false);
-        loadData();
-      } else {
-        alert(body.message || "Có lỗi xảy ra");
-      }
-    } catch (error) {
-      console.error(error);
+      updateEmployee.mutate(payload, { onSuccess: () => setIsModalOpen(false) });
+    } else {
+      const payload = { ...values, password: values.password! };
+      if (!payload.department_id) delete (payload as Partial<typeof payload>).department_id;
+      createEmployee.mutate(payload, { onSuccess: () => setIsModalOpen(false) });
     }
   };
 
@@ -199,17 +167,81 @@ export default function EmployeeMgmt() {
     }
   };
 
-  const renderGender = (gender: any) => {
+  const renderGender = (gender: boolean | number | string | null | undefined): string => {
     if (gender === true || gender === 1 || gender === "true") return "Nam";
     if (gender === false || gender === 0 || gender === "false") return "Nữ";
     return "Chưa có thông tin";
   };
   // ---------------------------------------------
 
-  if (loading) return <div className="py-8 text-center text-gray-500 font-medium">Đang tải dữ liệu nhân viên...</div>;
+  if (loading) return null; // loading.tsx handles skeleton
+
+  const empColumns: Column<Employee>[] = [
+    {
+      key: "index",
+      header: "STT",
+      className: "w-14",
+      render: (_v, _r, index) => <span className="text-gray-500">{index + 1}</span>,
+    },
+    {
+      key: "employee_code",
+      header: "Mã NV",
+      render: (_v, emp) => <span className="font-mono text-blue-600">{emp.employee_code}</span>,
+    },
+    {
+      key: "full_name",
+      header: "Họ Tên",
+      render: (_v, emp) => (
+        <div>
+          <div className="text-sm font-semibold text-gray-800">{emp.full_name}</div>
+          <div className="text-xs text-gray-500">
+            {emp.email}
+            {String(emp.is_active) === "false" && <span className="text-red-500 ml-1">(Đã nghỉ)</span>}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "department",
+      header: "Phòng Ban",
+      render: (_v, emp) => <span className="text-gray-600">{emp.department?.name || "Chưa set"}</span>,
+    },
+    {
+      key: "role",
+      header: "Vai trò",
+      render: (_v, emp) => (
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          emp.role === "ADMIN" ? "bg-red-100 text-red-700" :
+          emp.role === "MANAGER" ? "bg-blue-100 text-blue-700" :
+          "bg-gray-100 text-gray-700"
+        }`}>
+          {emp.role}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Thao tác",
+      className: "text-center",
+      render: (_v, emp) => (
+        <div className="flex items-center justify-center gap-4">
+          <button onClick={() => openViewModal(emp)} className="text-green-500 hover:text-green-700 hover:scale-110 transition-all" title="Xem chi tiết">
+            <FontAwesomeIcon icon={faEye} size="lg" />
+          </button>
+          <button onClick={() => openEditModal(emp)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Chỉnh sửa">
+            <FontAwesomeIcon icon={faPenToSquare} size="lg" />
+          </button>
+          <button onClick={() => handleDelete(emp.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa nhân viên">
+            <FontAwesomeIcon icon={faTrashCan} size="lg" />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="p-4">
+      {ConfirmUI}
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
@@ -250,71 +282,13 @@ export default function EmployeeMgmt() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="p-4 font-semibold text-gray-600 text-sm">STT</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Mã NV</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Họ Tên</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Phòng Ban</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm">Vai trò</th>
-              <th className="p-4 font-semibold text-gray-600 text-sm text-center">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredEmployees.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-10 text-center text-gray-400">Không tìm thấy dữ liệu phù hợp</td>
-              </tr>
-            ) : (
-              filteredEmployees.map((emp, index) => (
-                <tr key={emp.id} className={`hover:bg-blue-50/30 transition-colors ${String(emp.is_active) === "false" ? "bg-gray-50 opacity-70" : ""}`}>
-                  <td className="p-4 text-sm text-gray-500">{index + 1}</td>
-                  <td className="p-4 text-sm font-mono text-blue-600">{emp.employee_code}</td>
-                  <td className="p-4">
-                    <div className="text-sm font-semibold text-gray-800">{emp.full_name}</div>
-                    <div className="text-xs text-gray-500">{emp.email} {String(emp.is_active) === "false" && <span className="text-red-500 ml-1">(Đã nghỉ)</span>}</div>
-                  </td>
-                  <td className="p-4 text-sm text-gray-600">{emp.department?.name || "Chưa set"}</td>
-                  <td className="p-4 text-sm">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${emp.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
-                      emp.role === 'MANAGER' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                      {emp.role}
-                    </span>
-                  </td>
-                  <td className="p-4 text-sm text-center space-x-5">
-                    <button
-                      onClick={() => openViewModal(emp)}
-                      className="text-green-500 hover:text-green-700 hover:scale-110 transition-all"
-                      title="Xem chi tiết"
-                    >
-                      <FontAwesomeIcon icon={faEye} size="lg" />
-                    </button>
-
-                    <button
-                      onClick={() => openEditModal(emp)}
-                      className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all"
-                      title="Chỉnh sửa"
-                    >
-                      <FontAwesomeIcon icon={faPenToSquare} size="lg" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(emp.id)}
-                      className="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
-                      title="Xóa nhân viên"
-                    >
-                      <FontAwesomeIcon icon={faTrashCan} size="lg" />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table<Employee>
+        data={filteredEmployees}
+        columns={empColumns}
+        rowKey="id"
+        emptyMessage="Không tìm thấy dữ liệu phù hợp"
+        defaultPageSize={10}
+      />
 
       {/* MODAL XEM CHI TIẾT */}
       {isViewModalOpen && viewEmployee && (
@@ -397,33 +371,36 @@ export default function EmployeeMgmt() {
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">{isEdit ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}</h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Họ Tên</label>
-                    <input type="text" required value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="text" {...register("full_name")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
-                    <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="email" {...register("email")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                   </div>
                 </div>
 
                 {!isEdit && (
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mật khẩu ban đầu</label>
-                    <input type="password" required value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="password" {...register("password")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Ngày sinh</label>
-                    <input type="date" value={formData.date_of_birth} onChange={e => setFormData({ ...formData, date_of_birth: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="date" {...register("date_of_birth")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Giới tính</label>
-                    <select value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select {...register("gender")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                       <option value="true">Nam</option>
                       <option value="false">Nữ</option>
                     </select>
@@ -433,19 +410,19 @@ export default function EmployeeMgmt() {
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Số điện thoại / Địa chỉ</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input type="tel" placeholder="Số điện thoại" value={formData.phone_number} onChange={e => setFormData({ ...formData, phone_number: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
-                    <input type="text" placeholder="Địa chỉ" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="tel" placeholder="Số điện thoại" {...register("phone_number")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="text" placeholder="Địa chỉ" {...register("address")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Chức vụ</label>
-                    <input type="text" value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input type="text" {...register("position")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vai trò hệ thống</label>
-                    <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select {...register("role")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                       <option value="EMPLOYEE">Nhân Viên</option>
                       <option value="MANAGER">Trưởng Phòng</option>
                       <option value="ADMIN">Quản Trị</option>
@@ -455,24 +432,35 @@ export default function EmployeeMgmt() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phòng ban trực thuộc</label>
-                  <select value={formData.department_id} onChange={e => setFormData({ ...formData, department_id: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                  <select {...register("department_id")} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="">-- Chọn phòng ban --</option>
-                    {departments.map((d) => (
+                    {departments.map((d: Department) => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
                   </select>
                 </div>
 
-                {isEdit && formData.role !== "ADMIN" && (
+                {isEdit && watchedRole !== "ADMIN" && (
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Đã nghỉ</label>
-                    <input type="checkbox" checked={formData.is_active === "false"} onChange={e => setFormData({ ...formData, is_active: e.target.checked ? "false" : "true" })} className="ml-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                    <input
+                      type="checkbox"
+                      checked={watchedIsActive === "false"}
+                      onChange={e => setValue("is_active", e.target.checked ? "false" : "true")}
+                      className="ml-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
                   </div>
                 )}
 
                 <div className="flex justify-end space-x-3 pt-6">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-semibold transition-colors">Hủy</button>
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-lg transition-all active:scale-95">Lưu thay đổi</button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || createEmployee.isPending || updateEmployee.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-2 rounded-lg font-bold shadow-lg transition-all active:scale-95"
+                  >
+                    Lưu thay đổi
+                  </button>
                 </div>
               </form>
             </div>

@@ -1,118 +1,98 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
-import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Mail, Lock, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { useLogin } from "@/hooks/useAuth";
+import { loginSchema, type LoginFormValues } from "@/validations/auth.schema";
+import { cn } from "@/lib/utils";
 
 export default function LoginForm() {
-  const router = useRouter();
+  const { mutate: login, isPending } = useLogin();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const payload = JSON.parse(window.atob(base64));
-      payload.role === "ADMIN" ? router.push("/dashboard/overview") : router.push("/dashboard/profile");
-    }
-  }, [router]);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { employee_code: "", password: "" },
+  });
 
-  const [employee_code, setEmployeeCode] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employee_code, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      // Handle successful login
-      localStorage.setItem('token', data.data.token); // Adjust based on your backend response
-      window.location.href = '/dashboard'; // Redirect to dashboard or home
-
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during login');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const onSubmit = (values: LoginFormValues) => login(values);
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit}>
-      {error && (
-        <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-center">
-          {error}
-        </div>
-      )}
+    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
+      {/* Employee Code */}
       <div className="space-y-2 text-left">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="employee_code">
+        <label
+          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          htmlFor="employee_code"
+        >
           Mã nhân viên
         </label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-gray-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
             <Mail className="h-5 w-5" />
           </div>
           <input
             id="employee_code"
             type="text"
-            required
-            className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white sm:text-sm transition-all outline-none"
+            autoComplete="username"
             placeholder="Nhập mã nhân viên của bạn"
-            value={employee_code}
-            onChange={(e) => setEmployeeCode(e.target.value)}
+            {...register("employee_code")}
+            className={cn(
+              "block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white sm:text-sm transition-all outline-none",
+              "focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+              errors.employee_code ? "border-red-400" : "border-gray-200 dark:border-gray-700",
+            )}
           />
         </div>
+        {errors.employee_code && (
+          <p className="text-xs text-red-500">{errors.employee_code.message}</p>
+        )}
       </div>
 
+      {/* Password */}
       <div className="space-y-2 text-left">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="password">
+        <label
+          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+          htmlFor="password"
+        >
           Mật khẩu
         </label>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-gray-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
             <Lock className="h-5 w-5" />
           </div>
           <input
             id="password"
             type="password"
-            required
-            className="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white sm:text-sm transition-all outline-none"
+            autoComplete="current-password"
             placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            {...register("password")}
+            className={cn(
+              "block w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white sm:text-sm transition-all outline-none",
+              "focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+              errors.password ? "border-red-400" : "border-gray-200 dark:border-gray-700",
+            )}
           />
         </div>
+        {errors.password && (
+          <p className="text-xs text-red-500">{errors.password.message}</p>
+        )}
       </div>
 
-      <button
+      <Button
         type="submit"
-        disabled={isLoading}
-        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-500/30 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-300 transform active:scale-[0.98]"
+        isLoading={isPending}
+        size="lg"
+        className="w-full"
+        rightIcon={<ArrowRight className="h-4 w-4" />}
       >
-        {isLoading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
-        ) : (
-          <span className="flex items-center">
-            Đăng nhập
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </span>
-        )}
-      </button>
+        Đăng nhập
+      </Button>
     </form>
-  )
+  );
 }

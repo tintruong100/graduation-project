@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 
+/**
+ * /dashboard root — middleware handles the real redirect based on role.
+ * This page is only reached if middleware is bypassed (e.g., direct server call).
+ * Safe fallback: redirect to profile.
+ */
 export default function DashboardIndex() {
-    // Bất cứ ai vào thẳng /dashboard sẽ bị bê ngay sang /login
-    redirect("/login");
+    redirect("/dashboard/profile");
 }

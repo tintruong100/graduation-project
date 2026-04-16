@@ -1,17 +1,8 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { type Metadata } from "next";
 import FingerprintMgmt from "@/components/dashboard/fingerprint/FingerprintMgmt";
 
+export const metadata: Metadata = { title: "Vân tay" };
+
 export default function FingerprintPage() {
-    const router = useRouter();
-
-    useEffect(() => {
-        document.title = "Vân tay | HRM System";
-    }, [router]);
-
-    return (
-        <FingerprintMgmt />
-    );
+    return <FingerprintMgmt />;
 }

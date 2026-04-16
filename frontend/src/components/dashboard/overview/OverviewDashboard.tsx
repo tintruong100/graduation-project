@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchWithAuth } from "@/utils/api";
+import { useAuthStore } from "@/store/auth.store";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useDepartments } from "@/hooks/useDepartments";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faBuilding, faFileCircleExclamation, faChartPie, faArrowRight, faUserPlus, faFingerprint } from '@fortawesome/free-solid-svg-icons';
+import type { Employee } from "@/types";
 
 interface DashboardStats {
     totalEmployees: number;
@@ -21,79 +23,40 @@ interface DeptStat {
 }
 
 export default function OverviewDashboard() {
-    const [loading, setLoading] = useState(true);
-    const [userName, setUserName] = useState("");
+    // 1. Lấy tên Admin từ Zustand store
+    const currentUser = useAuthStore.getState().user;
+    const userName = currentUser?.full_name || "Admin";
 
-    // States lưu trữ số liệu thống kê
-    const [stats, setStats] = useState<DashboardStats>({
-        totalEmployees: 0,
-        activeEmployees: 0,
-        totalDepartments: 0,
-        males: 0,
-        females: 0,
+    // 2. Gọi API lấy dữ liệu thực tế bằng hooks
+    const { data: employees = [], isLoading: empLoading } = useEmployees();
+    const { data: departments = [], isLoading: deptLoading } = useDepartments();
+
+    const loading = empLoading || deptLoading;
+
+    // 3. Xử lý số liệu
+    const activeEmps = employees.filter((e: Employee) => String(e.is_active) === "true");
+    const malesCount = employees.filter((e: Employee) => String(e.gender) === "true" || (e.gender as unknown as number) === 1).length;
+
+    const stats: DashboardStats = {
+        totalEmployees: employees.length,
+        activeEmployees: activeEmps.length,
+        totalDepartments: departments.length,
+        males: malesCount,
+        females: employees.length - malesCount,
+    };
+
+    // 4. Tính toán phân bổ nhân sự
+    const deptCountMap: Record<string, number> = {};
+    employees.forEach((emp: Employee) => {
+        const deptName = emp.department?.name || "Chưa phân bổ";
+        deptCountMap[deptName] = (deptCountMap[deptName] || 0) + 1;
     });
-    const [deptStats, setDeptStats] = useState<DeptStat[]>([]);
 
-    useEffect(() => {
-        const loadDashboardData = async () => {
-            try {
-                // 1. Lấy tên Admin từ Token
-                const token = localStorage.getItem("token");
-                if (token) {
-                    const base64Url = token.split('.')[1];
-                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                    const payload = JSON.parse(window.atob(base64));
-                    setUserName(payload.full_name || "Admin");
-                }
-
-                // 2. Gọi API lấy dữ liệu thực tế
-                const [empRes, deptRes] = await Promise.all([
-                    fetchWithAuth("/employees"),
-                    fetchWithAuth("/departments")
-                ]);
-
-                let employees = [];
-                let departments = [];
-
-                if (empRes.ok) employees = (await empRes.json()).data || [];
-                if (deptRes.ok) departments = (await deptRes.json()).data || [];
-
-                // 3. Xử lý số liệu
-                const activeEmps = employees.filter((e: any) => String(e.is_active) === "true");
-                const malesCount = employees.filter((e: any) => String(e.gender) === "true" || e.gender === 1).length;
-
-                setStats({
-                    totalEmployees: employees.length,
-                    activeEmployees: activeEmps.length,
-                    totalDepartments: departments.length,
-                    males: malesCount,
-                    females: employees.length - malesCount,
-                });
-
-                // 4. Tính toán phân bổ nhân sự
-                const deptCountMap: Record<string, number> = {};
-                employees.forEach((emp: any) => {
-                    const deptName = emp.department?.name || "Chưa phân bổ";
-                    deptCountMap[deptName] = (deptCountMap[deptName] || 0) + 1;
-                });
-
-                const deptArr = Object.keys(deptCountMap).map(key => ({
-                    name: key,
-                    count: deptCountMap[key],
-                    percentage: employees.length > 0 ? Math.round((deptCountMap[key] / employees.length) * 100) : 0
-                })).sort((a, b) => b.count - a.count).slice(0, 4);
-
-                setDeptStats(deptArr);
-
-            } catch (err) {
-                console.error("Lỗi khi tải dữ liệu tổng quan:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadDashboardData();
-    }, []);
+    const deptStats: DeptStat[] = Object.keys(deptCountMap).map(key => ({
+        name: key,
+        count: deptCountMap[key],
+        percentage: employees.length > 0 ? Math.round((deptCountMap[key] / employees.length) * 100) : 0
+    })).sort((a, b) => b.count - a.count).slice(0, 4);
 
     if (loading) return (
         <div className="flex justify-center items-center h-64">
