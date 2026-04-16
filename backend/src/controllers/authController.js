@@ -1,52 +1,32 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import db from '../models/index.js';
-import { raw } from 'express';
+
 
 const login = async (req, res) => {
     try {
         const { employee_code, password } = req.body;
+
         if (!employee_code || !password) {
             return res.status(400).json({ success: false, message: 'Vui lòng cung cấp mã nhân viên và password!' });
         }
 
-        const user = await db.Employee.findOne({
-            where: { employee_code }
-        });
-
-        if (!user) {
-            return res.status(401).json({ success: false, message: 'Sai mã nhân viên hoặc password!' });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Sai mã nhân viên hoặc password!' });
-        }
-
-        // TỐI ƯU: Đưa id (UUID) vào token thay vì employee_code
-        const token = jwt.sign(
-            { id: user.id, department_id: user.department_id, role: user.role },
-            process.env.JWT_SECRET || 'fallback_secret_key',
-            { expiresIn: '1d' }
-        );
+        // Đẩy hết việc nặng cho Service
+        const data = await authService.loginService(employee_code, password);
 
         return res.status(200).json({
             success: true,
             message: 'Đăng nhập thành công',
-            data: {
-                token,
-                user: {
-                    id: user.id,
-                    employee_code: user.employee_code,
-                    full_name: user.full_name,
-                    email: user.email,
-                    role: user.role,
-                    position: user.position // Trả thêm chức vụ cho Web hiển thị
-                }
-            }
+            data: data
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: 'Lỗi server!', error: error.message });
+        // Bắt lỗi từ Service ném ra (có sẵn status code)
+        const status = error.status || 500;
+        return res.status(status).json({
+            success: false,
+            message: error.message || 'Lỗi server!',
+            error: status === 500 ? error.message : undefined
+        });
     }
 };
 
