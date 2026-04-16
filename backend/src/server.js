@@ -16,8 +16,6 @@ app.use(cors({
     credentials: true                 // allow cookies/auth
 }))
 
-const io = new Server(server, { cors: { origin: '*' } });
-
 //config app
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

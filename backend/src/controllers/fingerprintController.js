@@ -22,12 +22,12 @@ const getAllFingerprints = async (req, res) => {
 const updateFingerprint = async (req, res) => {
     try {
         const { id } = req.params;
-        const { finger_name, sensor_id, template_data } = req.body;
+        const { finger_name } = req.body;
 
         const fingerprint = await db.Fingerprint.findByPk(id, { raw: false });
         if (!fingerprint) return res.status(404).json({ success: false, message: 'Không tìm thấy vân tay!' });
 
-        await fingerprint.update({ finger_name, sensor_id, template_data });
+        await fingerprint.update({ finger_name });
         return res.status(200).json({ success: true, message: 'Cập nhật vân tay thành công!', data: fingerprint });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Lỗi server!', error: error.message });
