@@ -68,4 +68,35 @@ const getScanLog = async () => {
     });
     return scanLogs;
 }
-export default { getAll, update, remove, create, getScanLog };
+
+const getAllFingerprintsForSync = async () => {
+    const fingerprintsRaw = await db.Fingerprint.findAll({
+        attributes: ['sensor_id', 'employee_id', 'template_data'],
+        include: [{ model: db.Employee, as: 'employee', attributes: ['full_name', 'employee_code'] }],
+        raw: true, nest: true
+    });
+
+    return fingerprintsRaw.map(fp => ({
+        sensor_id: fp.sensor_id,
+        employee_id: fp.employee_id,
+        full_name: fp.employee,
+        employee_code: fp.employee,
+        template_data: fp.template_data
+    }));
+};
+
+const createScanLog = async (data) => {
+    const { employee_id, scan_time, image_path, status } = data;
+
+    await db.ScanLog.create({
+        employee_id: employee_id,
+        scan_time: scan_time,
+        image_path: image_path || null,
+        status: status
+    });
+
+    //Xu ly cham cong sau khi tao log
+
+};
+
+export default { getAll, update, remove, create, getScanLog, getAllFingerprintsForSync, createScanLog };

@@ -1,6 +1,7 @@
 import db from '../../models/index.js'; // Cập nhật đúng đường dẫn trỏ về model
 import { getIO } from "../socketHandler.js";
 import { EventEmitter } from 'events';
+import fingerprintService from '../../services/fingerprintService.js';
 
 const internalBus = new EventEmitter();
 
@@ -10,27 +11,7 @@ export const handleFingerprintEvents = (socket, io) => {
     socket.on('request_sync_data', async () => {
         console.log(`=> [Đồng bộ] Pi (socket id: ${socket.id}) yêu cầu tải dữ liệu vân tay mới nhất.`);
         try {
-            // SỬ DỤNG COMBO: raw: true VÀ nest: true
-            const fingerprintsRaw = await db.Fingerprint.findAll({
-                attributes: ['sensor_id', 'employee_id', 'template_data'],
-                include: [
-                    { model: db.Employee, as: 'employee', attributes: ['full_name', 'employee_code'] }
-                ],
-                raw: true,   // Trả về object thuần
-                nest: true   // Tự động gom nhóm bảng lồng nhau
-            });
-
-            // Vì raw: true nên nó là mảng object thuần luôn, KHÔNG cần fp.toJSON() nữa!
-            const fingerprints = fingerprintsRaw.map(fp => {
-                return {
-                    sensor_id: fp.sensor_id,
-                    employee_id: fp.employee_id,
-                    full_name: fp.employee ? fp.employee.full_name : 'Unknown',
-                    employee_code: fp.employee ? fp.employee.employee_code : 'Unknown',
-                    template_data: fp.template_data
-                };
-            });
-
+            const fingerprints = await fingerprintService.getAllFingerprintsForSync();
             // Gửi trả lại cho Pi
             socket.emit('sync_data_response', fingerprints);
             console.log(`Đã gửi ${fingerprints.length} mẫu vân tay xuống Pi.`);
