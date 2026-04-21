@@ -15,6 +15,7 @@ export const handleFingerprintEvents = (socket, io) => {
             // Gửi trả lại cho Pi
             socket.emit('sync_data_response', fingerprints);
             console.log(`Đã gửi ${fingerprints.length} mẫu vân tay xuống Pi.`);
+            console.log(fingerprints);
         } catch (error) {
             console.error("Lỗi đồng bộ dữ liệu với Pi:", error);
         }

@@ -72,16 +72,30 @@ const getScanLog = async () => {
 const getAllFingerprintsForSync = async () => {
     const fingerprintsRaw = await db.Fingerprint.findAll({
         attributes: ['sensor_id', 'employee_id', 'template_data'],
-        include: [{ model: db.Employee, as: 'employee', attributes: ['full_name', 'employee_code'] }],
+        include: [
+            {
+                model: db.Employee,
+                as: 'employee',
+                attributes: ['full_name', 'employee_code', 'custom_start_time', 'custom_end_time'],
+                include: [
+                    {
+                        model: db.Department,
+                        as: 'department',
+                        attributes: ['start_time', 'end_time'] // Đã xóa khoảng trắng dư
+                    }
+                ]
+            }
+        ],
         raw: true, nest: true
     });
-
     return fingerprintsRaw.map(fp => ({
         sensor_id: fp.sensor_id,
         employee_id: fp.employee_id,
-        full_name: fp.employee,
-        employee_code: fp.employee,
-        template_data: fp.template_data
+        full_name: fp.employee.full_name,
+        employee_code: fp.employee.employee_code,
+        template_data: fp.template_data,
+        start_time: fp.employee.custom_start_time || fp.employee.department.start_time || '08:00',
+        end_time: fp.employee.custom_end_time || fp.employee.department.end_time || '17:00'
     }));
 };
 
