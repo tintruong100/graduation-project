@@ -7,7 +7,7 @@ const { Op } = require('sequelize');
 const getAll = async () => {
     const employees = await db.Employee.findAll({
         attributes: { exclude: ['password_hash'] },
-        include: [{ model: db.Department, as: 'department', attributes: ['id', 'name'] }],
+        include: [{ model: db.Department, as: 'department', attributes: ['id', 'name', 'start_time', 'end_time'] }],
         order: [
             ['employee_code', 'ASC'] // Sắp xếp theo cột employee_code tăng dần
             // Nếu muốn mới nhất lên đầu thì đổi 'ASC' thành 'DESC'
@@ -22,7 +22,7 @@ const getAllByDepartment = async (department_id) => {
     const employees = await db.Employee.findAll({
         where: { department_id: department_id },
         attributes: { exclude: ['password_hash'] },
-        include: [{ model: db.Department, as: 'department', attributes: ['id', 'name'] }],
+        include: [{ model: db.Department, as: 'department', attributes: ['id', 'name', 'start_time', 'end_time'] }],
         order: [
             ['employee_code', 'ASC'] // Sắp xếp theo cột employee_code tăng dần
             // Nếu muốn mới nhất lên đầu thì đổi 'ASC' thành 'DESC'
