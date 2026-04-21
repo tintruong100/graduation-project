@@ -73,7 +73,7 @@ const generateUniqueEmployeeCode = async (fullName) => {
 };
 
 const create = async (employeeData) => {
-    const { full_name, email, password, date_of_birth, gender, phone_number, address, department_id, position, role } = employeeData;
+    const { full_name, email, password, date_of_birth, gender, phone_number, address, department_id, position, role, custom_start_time, custom_end_time } = employeeData;
 
     if (!full_name || !email || !password) {
         throw { status: 400, message: 'Tên nhân viên, email và mật khẩu là bắt buộc!' };
@@ -84,7 +84,19 @@ const create = async (employeeData) => {
     const password_hash = await bcrypt.hash(password, 10);
 
     const newEmployee = await db.Employee.create({
-        employee_code: newCode, full_name, email, password_hash, date_of_birth, gender, phone_number, address, department_id: department_id || null, position, role: role || 'EMPLOYEE'
+        employee_code: newCode,
+        full_name,
+        email,
+        password_hash,
+        date_of_birth,
+        gender,
+        phone_number,
+        address,
+        department_id: department_id || null,
+        position,
+        role: role || 'EMPLOYEE',
+        custom_start_time: custom_start_time || null,
+        custom_end_time: custom_end_time || null,
     });
 
     // Hide password hash
@@ -93,7 +105,7 @@ const create = async (employeeData) => {
 }
 
 const update = async (employeeData, id) => {
-    const { full_name, email, date_of_birth, gender, phone_number, address, department_id, position, role, is_active } = employeeData;
+    const { full_name, email, date_of_birth, gender, phone_number, address, department_id, position, role, is_active, custom_start_time, custom_end_time } = employeeData;
     const employee = await db.Employee.findByPk(id, {
         raw: false,
     });
@@ -102,7 +114,20 @@ const update = async (employeeData, id) => {
         const existingEmail = await db.Employee.findOne({ where: { email } });
         if (existingEmail) throw { status: 400, message: 'Email đã tồn tại!' };
     }
-    const updatedEmployee = await employee.update({ full_name, email, date_of_birth, gender, phone_number, address, department_id: department_id || null, position, role: role || 'EMPLOYEE', is_active });
+    const updatedEmployee = await employee.update({
+        full_name,
+        email,
+        date_of_birth,
+        gender,
+        phone_number,
+        address,
+        department_id: department_id || null,
+        position,
+        role: role || 'EMPLOYEE',
+        is_active,
+        custom_start_time: custom_start_time || null,
+        custom_end_time: custom_end_time || null,
+    });
     delete updatedEmployee.dataValues.password_hash;
     return updatedEmployee;
 }
