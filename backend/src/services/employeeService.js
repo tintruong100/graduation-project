@@ -1,6 +1,7 @@
 import db from '../models/index.js';
 import bcrypt from 'bcryptjs';
 import stringUtils from '../utils/stringUtils.js';
+import { getIO } from "../sockets/socketHandler.js";
 
 const { Op } = require('sequelize');
 
@@ -129,6 +130,10 @@ const update = async (employeeData, id) => {
         custom_end_time: custom_end_time || null,
     });
     delete updatedEmployee.dataValues.password_hash;
+
+    const io = getIO();
+    io.emit('force_sync_local_db');
+
     return updatedEmployee;
 }
 
@@ -139,4 +144,16 @@ const remove = async (id) => {
     if (!employee) throw { status: 404, message: 'Không tìm thấy nhân viên!' };
     await employee.destroy();
 }
-export default { getAll, getAllByDepartment, create, update, remove };
+
+const employee = async (id) => {
+    const employee = await db.Employee.findByPk(id, {
+        attributes: { exclude: ['password_hash'] },
+        include: [{ model: db.Department, as: 'department', attributes: ['id', 'name', 'start_time', 'end_time'] }],
+        raw: true,
+        nest: true
+    });
+    if (!employee) throw { status: 404, message: 'Không tìm thấy nhân viên!' };
+    return employee;
+}
+
+export default { getAll, getAllByDepartment, create, update, remove, employee };
