@@ -12,6 +12,8 @@ export const employeeSchema = z.object({
   position: z.string().optional(),
   department_id: z.string().optional(),
   role: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"]),
+  custom_start_time: z.string().nullable().optional(),
+  custom_end_time: z.string().nullable().optional(),
   is_active: z.enum(["true", "false"]),
 });
 
