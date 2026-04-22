@@ -3,6 +3,7 @@ import authRoutes from './authRoutes.js';
 import employeeRouter from './employeeRoutes.js';
 import departmentRouter from './departmentRoutes.js';
 import fingerprintRouter from './fingerprintRoutes.js';
+import attendanceRoutes from './attendanceRoute.js';
 
 let router = express.Router();
 
@@ -18,6 +19,10 @@ let initWebRoutes = (app) => {
 
     // Fingerprint Routes
     app.use('/api/v1/fingerprints', fingerprintRouter);
+
+    // Attendance Routes
+    app.use('/api/v1/attendance', attendanceRoutes);
+
 
     return app.use("/", router);
 }

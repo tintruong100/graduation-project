@@ -1,6 +1,7 @@
-// src/models/attendanceSummary.js
+'use strict';
+const { Model } = require('sequelize');
 
-export default (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes) => {
     const AttendanceSummary = sequelize.define('AttendanceSummary', {
         id: {
             type: DataTypes.UUID,

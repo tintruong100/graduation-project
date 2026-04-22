@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import fileUtils from '../../utils/fileUtils.js';
 import fingerprintService from '../../services/fingerprintService.js';
+import attendanceService from '../../services/attendanceService.js';
 
 export const handleAttendanceEvents = (socket, io) => {
 
@@ -25,11 +26,12 @@ export const handleAttendanceEvents = (socket, io) => {
                 image_path: savedImagePath,
                 status: dbStatus
             });
-
+            const result = await attendanceService.processScanLog(data.employee_id, data.scan_time);
             if (isUnknown) {
                 console.log(`⚠️ Đã ghi nhận một lượt quét KHÔNG HỢP LỆ vào hệ thống!`);
             } else {
                 console.log("✅ Đã ghi nhận điểm danh thành công!");
+                console.log(result);
             }
         } catch (error) {
             console.error("❌ Lỗi lưu điểm danh:", error);
@@ -56,6 +58,9 @@ export const handleAttendanceEvents = (socket, io) => {
                     image_path: savedImagePath,
                     status: dbStatus
                 });
+
+                const result = await attendanceService.processScanLog(log.employee_id, log.scan_time);
+                console.log(result);
             } catch (error) {
                 console.error(`❌ Lỗi lưu đồng bộ offline cho dữ liệu ${log.employee_id}:`, error);
             }
