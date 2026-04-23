@@ -7,10 +7,7 @@ import dateUtils from '../utils/dateUtils.js';
 // ==========================================
 const getMonthlyAttendance = async (req, res) => {
     try {
-        // Lấy ID từ URL params. (Nếu middleware của bạn đã xử lý route /me thì truyền req.user.id vào đây)
         const employee_id = req.params.employee_id;
-
-        // Lấy tháng/năm từ query, nếu không có thì mặc định lấy tháng hiện tại
         const currentMonth = new Date().getMonth() + 1;
         const currentYear = new Date().getFullYear();
 
@@ -22,10 +19,14 @@ const getMonthlyAttendance = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: `Lấy dữ liệu chấm công tháng ${month}/${year} thành công.`,
-            data
+            data: data
         });
     } catch (error) {
-        return res.status(400).json({ success: false, message: error.message });
+        const status = error.status || 500;
+        return res.status(status).json({
+            success: false,
+            message: error.message || 'Lỗi server!',
+        });
     }
 };
 
@@ -43,10 +44,14 @@ const getDailySummaryAll = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: `Lấy danh sách chấm công ngày ${work_date} thành công.`,
-            data
+            data: data
         });
     } catch (error) {
-        return res.status(400).json({ success: false, message: error.message });
+        const status = error.status || 500;
+        return res.status(status).json({
+            success: false,
+            message: error.message || 'Lỗi server!',
+        });
     }
 };
 
@@ -67,7 +72,11 @@ const getDailyAttendance = async (req, res) => {
             data: data || null // Trả về null nếu hôm đó chưa chấm công
         });
     } catch (error) {
-        return res.status(400).json({ success: false, message: error.message });
+        const status = error.status || 500;
+        return res.status(status).json({
+            success: false,
+            message: error.message || 'Lỗi server!',
+        });
     }
 };
 

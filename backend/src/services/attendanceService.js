@@ -7,21 +7,42 @@ import { Op } from 'sequelize';
 // 1. HÀM TRUY VẤN: Lấy bản ghi điểm danh
 // ==========================================
 const getEmployeeAttendanceByDate = async (employee_id, work_date) => {
-    if (!employee_id || !work_date) throw new Error('Thiếu employee_id hoặc work_date');
+    if (!employee_id || !work_date) throw { status: 400, message: 'Thiếu employee_id hoặc work_date' };
     return await db.AttendanceSummary.findOne({
         where: { employee_id, work_date }
     });
 };
 
 const getAllAttendanceSummaryByDate = async (work_date) => {
-    if (!work_date) throw new Error('Thiếu work_date');
-    return await db.AttendanceSummary.findAll({
-        where: { work_date }
+    if (!work_date) throw { status: 400, message: 'Thiếu work_date' };
+
+    const result = await db.AttendanceSummary.findAll({
+        where: { work_date },
+        include: [
+            {
+                model: db.Employee,
+                as: 'employee',
+                attributes: ['id', 'full_name', 'employee_code'], // Chỉ lấy các trường cần show
+                include: [
+                    {
+                        model: db.Department,
+                        as: 'department',
+                        attributes: ['id', 'name']
+                    }
+                ]
+            }
+        ],
+        raw: true,
+        nest: true,
+        // Sắp xếp danh sách trả về theo thứ tự Mã Nhân Viên cho đẹp đội hình
+        order: [[{ model: db.Employee, as: 'employee' }, 'employee_code', 'ASC']]
     });
-}
+
+    return result;
+};
 
 const getEmployeeAttendanceSummaryByMonth = async (employee_id, month, year) => {
-    if (!employee_id || !month || !year) throw new Error('Thiếu employee_id hoặc month hoặc year');
+    if (!employee_id || !month || !year) throw { status: 400, message: 'Thiếu employee_id hoặc month hoặc year' };
     const startDate = dateUtils.getStartOfMonth(year, month);
     const endDate = dateUtils.getEndOfMonth(year, month);
 
@@ -121,7 +142,7 @@ const handleCheckOut = async (summary, scan_time, scanDateObj, targetEndDate) =>
 const processScanLog = async (employee_id, scan_time) => {
     // 1. Lấy thông tin nhân viên
     const employee = await employeeService.employee(employee_id);
-    if (!employee) throw new Error('Không tìm thấy nhân viên trong hệ thống');
+    if (!employee) throw { status: 404, message: 'Không tìm thấy nhân viên trong hệ thống' };
 
     // 2. Chuyển đổi thời gian
     const scanDateObj = new Date(scan_time);
