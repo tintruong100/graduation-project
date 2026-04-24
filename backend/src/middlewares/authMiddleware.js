@@ -54,7 +54,7 @@ const verifyAdmin = (req, res, next) => {
 };
 
 const verifyManager = (req, res, next) => {
-    if (req.user && (req.user.role === 'MANAGER')) {
+    if (req.user && (req.user.role === 'MANAGER' || req.user.role === 'ADMIN')) {
         next();
     } else {
         return res.status(403).json({
