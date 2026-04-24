@@ -141,3 +141,33 @@ export interface Fingerprint {
   is_active?: boolean;
   createdAt?: string;
 }
+
+// src/types/index.ts
+
+export interface AttendanceSummary {
+  id: string;
+  employee_id: string;
+  work_date: string; // Định dạng YYYY-MM-DD
+  first_scan_time: string | null;
+  last_scan_time: string | null;
+  late_minutes: number;
+  early_leave_minutes: number;
+  gross_work_hours: number;
+  break_hours: number;
+  net_work_hours: number;
+  total_scans: number;
+  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'MISSING_OUT';
+  is_manually_edited: boolean;
+  edit_note: string | null;
+
+  // Dữ liệu join (include) từ bảng Employee mà Backend trả về nhờ "nest: true"
+  employee?: {
+    id: string;
+    full_name: string;
+    employee_code: string;
+    department?: {
+      id: string;
+      name: string;
+    }
+  };
+}
