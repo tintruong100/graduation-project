@@ -54,7 +54,7 @@ const verifyAdmin = (req, res, next) => {
 };
 
 const verifyManager = (req, res, next) => {
-    if (req.user && (req.user.role === 'MANAGER')) {
+    if (req.user && (req.user.role === 'MANAGER' || req.user.role === 'ADMIN')) {
         next();
     } else {
         return res.status(403).json({
@@ -64,8 +64,25 @@ const verifyManager = (req, res, next) => {
     }
 };
 
+const verifyEmployee = (req, res, next) => {
+    const currentUser = req.user; // Dữ liệu user từ middleware verifyToken
+    const employee_id = req.params.employee_id;
+
+    // ⚠️ BẢO MẬT: Nhân viên chỉ được xem dữ liệu của chính mình
+    if (currentUser.role === 'EMPLOYEE' && currentUser.id !== employee_id) {
+        return res.status(403).json({
+            success: false,
+            message: 'Truy cập bị từ chối: Bạn không thể xem dữ liệu của người khác.'
+        });
+    }
+    else {
+        next();
+    }
+};
+
 module.exports = {
     verifyToken,
     verifyAdmin,
-    verifyManager
+    verifyManager,
+    verifyEmployee
 };

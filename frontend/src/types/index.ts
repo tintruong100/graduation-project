@@ -73,14 +73,21 @@ export interface Employee {
   employee_code: string;
   full_name: string;
   email: string;
-  department?: { id: string; name: string };
   role: UserRole;
   gender: boolean;
   date_of_birth?: string;
   phone_number?: string;
   address?: string;
   position?: string;
+  custom_start_time?: string;
+  custom_end_time?: string;
   is_active: boolean;
+  department?: {
+    id: string;
+    name: string;
+    start_time: string;
+    end_time: string;
+  };
 }
 
 // ─── Attendance / Scan ────────────────────────────────────────────────────────

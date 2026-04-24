@@ -1,38 +1,17 @@
 import db from '../../models/index.js';
 import fs from 'fs';
 import path from 'path';
+import fileUtils from '../../utils/fileUtils.js';
+import fingerprintService from '../../services/fingerprintService.js';
+import attendanceService from '../../services/attendanceService.js';
 
 export const handleAttendanceEvents = (socket, io) => {
-
-    const saveImageFromBase64 = (employeeId, base64Data) => {
-        if (!base64Data) return null;
-
-        try {
-            // Đổi employeeId thành string an toàn cho tên file (VD: Unknown_ID_7)
-            const safeId = String(employeeId).replace(/[^a-zA-Z0-9_-]/g, '');
-            const filename = `attendance_${safeId}_${Date.now()}.jpg`;
-            const saveDirectory = path.join(process.cwd(), 'public', 'images');
-
-            if (!fs.existsSync(saveDirectory)) {
-                fs.mkdirSync(saveDirectory, { recursive: true });
-            }
-
-            const filePath = path.join(saveDirectory, filename);
-            const imageBuffer = Buffer.from(base64Data, 'base64');
-            fs.writeFileSync(filePath, imageBuffer);
-
-            return `/images/${filename}`;
-        } catch (error) {
-            console.error("Lỗi khi giải mã và lưu file ảnh:", error);
-            return null;
-        }
-    };
 
     // =====================================================================
     // 1. NHẬN ĐIỂM DANH ONLINE (REALTIME)
     // =====================================================================
     socket.on('attendance_scan', async (data) => {
-        console.log(`=> [Chấm công Online] ID nhận được: ${data.employee_id} lúc ${data.scan_time}`);
+        console.log(`=> [Chấm công Online] ID nhận được: ${data.employee_code} lúc ${data.scan_time}`);
 
         // Phân loại trạng thái và ID để lưu DB
         const isUnknown = String(data.employee_id).includes('Unknown_ID');
@@ -40,20 +19,19 @@ export const handleAttendanceEvents = (socket, io) => {
         const dbStatus = isUnknown ? 'FAILED' : 'SUCCESS';
 
         try {
-            // Vẫn chụp và lưu ảnh bình thường (Để bắt quả tang kẻ gian)
-            const savedImagePath = saveImageFromBase64(data.employee_id, data.image_data);
-
-            await db.ScanLog.create({
-                employee_id: dbEmployeeId, // Sẽ là null nếu là vân tay lạ
+            const savedImagePath = fileUtils.saveImageFromBase64(data.employee_code, data.image_data);
+            await fingerprintService.createScanLog({
+                employee_id: dbEmployeeId,
                 scan_time: data.scan_time,
                 image_path: savedImagePath,
-                status: dbStatus // SUCCESS hoặc FAILED
+                status: dbStatus
             });
-
+            const result = await attendanceService.processScanLog(data.employee_id, data.scan_time);
             if (isUnknown) {
                 console.log(`⚠️ Đã ghi nhận một lượt quét KHÔNG HỢP LỆ vào hệ thống!`);
             } else {
                 console.log("✅ Đã ghi nhận điểm danh thành công!");
+                console.log(result);
             }
         } catch (error) {
             console.error("❌ Lỗi lưu điểm danh:", error);
@@ -72,14 +50,17 @@ export const handleAttendanceEvents = (socket, io) => {
             const dbStatus = isUnknown ? 'FAILED' : 'SUCCESS';
 
             try {
-                const savedImagePath = saveImageFromBase64(log.employee_id, log.image_data);
+                const savedImagePath = fileUtils.saveImageFromBase64(log.employee_id, log.image_data);
 
-                await db.ScanLog.create({
+                await fingerprintService.createScanLog({
                     employee_id: dbEmployeeId,
                     scan_time: log.scan_time,
                     image_path: savedImagePath,
                     status: dbStatus
                 });
+
+                const result = await attendanceService.processScanLog(log.employee_id, log.scan_time);
+                console.log(result);
             } catch (error) {
                 console.error(`❌ Lỗi lưu đồng bộ offline cho dữ liệu ${log.employee_id}:`, error);
             }

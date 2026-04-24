@@ -95,6 +95,16 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 'EMPLOYEE',
             allowNull: false
         },
+        custom_start_time: {
+            type: DataTypes.TIME,
+            allowNull: true, // Cho phép NULL vì đa số sẽ dùng giờ phòng ban
+            comment: 'Giờ vào làm riêng. Nếu NULL thì lấy theo Phòng ban'
+        },
+        custom_end_time: {
+            type: DataTypes.TIME,
+            allowNull: true,
+            comment: 'Giờ ra về riêng. Nếu NULL thì lấy theo Phòng ban'
+        },
         is_active: {
             type: DataTypes.BOOLEAN,
             defaultValue: true,
