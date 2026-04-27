@@ -31,7 +31,6 @@ export const handleAttendanceEvents = (socket, io) => {
                 console.log(`⚠️ Đã ghi nhận một lượt quét KHÔNG HỢP LỆ vào hệ thống!`);
             } else {
                 console.log("✅ Đã ghi nhận điểm danh thành công!");
-                console.log(result);
             }
         } catch (error) {
             console.error("❌ Lỗi lưu điểm danh:", error);

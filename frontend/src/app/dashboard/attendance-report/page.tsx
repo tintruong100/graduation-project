@@ -1,13 +1,17 @@
-import { type Metadata } from "next";
-import ComingSoon from "@/components/coming-soon/ComingSoon";
+import AttendanceMgmt from "@/components/dashboard/attendance-report/AttendanceMgmt";
 
-export const metadata: Metadata = { title: "Báo cáo chấm công" };
+export const metadata = {
+    title: "Báo cáo chấm công | HRM System",
+    description: "Xem và quản lý dữ liệu điểm danh hàng ngày/tháng",
+};
 
 export default function AttendanceReportPage() {
     return (
-        <ComingSoon
-            title="Báo cáo chấm công đang phát triển..."
-            description="Hệ thống tổng hợp dữ liệu chấm công sẽ sớm có mặt tại đây!"
-        />
+        <div className="w-full space-y-4">
+            {/* Nếu bạn có component <PageWrapper> thì bọc ở đây. 
+        Tạm thời mình để div trống bao ngoài cho chuẩn layout.
+      */}
+            <AttendanceMgmt />
+        </div>
     );
 }

@@ -108,11 +108,6 @@ const handleCheckOut = async (summary, scan_time, scanDateObj, targetEndDate) =>
     const grossMs = scanDateObj - firstScanObj;
     const grossHours = parseFloat((grossMs / (1000 * 60 * 60)).toFixed(2));
 
-    // 2. Tính thời gian làm thực tế (Net) = Gross - Nghỉ trưa
-    const breakHours = parseFloat(summary.break_hours || 1.0);
-    let netHours = grossHours - breakHours;
-    if (netHours < 0) netHours = 0;
-
     // 3. Tính số phút về sớm
     let earlyMinutes = 0;
     if (scanDateObj < targetEndDate) {
@@ -124,7 +119,6 @@ const handleCheckOut = async (summary, scan_time, scanDateObj, targetEndDate) =>
         last_scan_time: scan_time,
         early_leave_minutes: earlyMinutes,
         gross_work_hours: grossHours,
-        net_work_hours: parseFloat(netHours.toFixed(2)),
         total_scans: (summary.total_scans || 1) + 1
     }, {
         where: { id: summary.id } // Tìm chính xác id của summary để update
@@ -205,6 +199,10 @@ const finalizeDailyAttendance = async (targetDateStr) => {
     // 2. Vòng lặp quét kiểm tra từng người
     for (const emp of employees) {
         const mySummary = todaySummaries.find(s => s.employee_id === emp.id);
+        const breakHours = parseFloat(mySummary.breakHours || 1.0);
+        let netHours = mySummary.gross_work_hours - breakHours;
+        if (netHours < 0) netHours = 0;
+        await mySummary.update({ net_work_hours: parseFloat(netHours.toFixed(2)) });
 
         if (!mySummary) {
             // Rẽ nhánh: Không có log nào -> Đánh vắng mặt
@@ -219,4 +217,63 @@ const finalizeDailyAttendance = async (targetDateStr) => {
     return { targetDate, absentCount, missingOutCount };
 };
 
-export default { getEmployeeAttendanceByDate, getAllAttendanceSummaryByDate, getEmployeeAttendanceSummaryByMonth, processScanLog, finalizeDailyAttendance };
+const getMonthlySummaryAllEmployees = async (month, year) => {
+    const startDate = dateUtils.getStartOfMonth(year, month);
+    const endDate = dateUtils.getEndOfMonth(year, month);
+
+    // Tính số ngày trong tháng đó (vd: tháng 4 có 30 ngày, tháng 2 có 28 ngày)
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    // Lấy toàn bộ log trong tháng
+    const records = await db.AttendanceSummary.findAll({
+        where: { work_date: { [Op.between]: [startDate, endDate] } },
+        include: [
+            {
+                model: db.Employee, as: 'employee', attributes: ['id', 'full_name', 'employee_code', 'position'],
+                include: [{ model: db.Department, as: 'department', attributes: ['name'] }]
+            }
+        ],
+        raw: true, nest: true
+    });
+
+    const summaryMap = {};
+
+    records.forEach(record => {
+        const empId = record.employee_id;
+
+        // 1. Nếu nhân viên chưa có trong danh sách thì tạo mới
+        if (!summaryMap[empId]) {
+            summaryMap[empId] = {
+                employee_code: record.employee?.employee_code || 'N/A',
+                full_name: record.employee?.full_name || 'N/A',
+                position: record.employee?.position || 'N/A',
+                department: record.employee?.department?.name || 'Chưa set',
+                days: {}, // Object chứa dữ liệu từng ngày
+                total_work_days: 0,
+            };
+
+            // Khởi tạo sẵn 31 ngày trống cho đẹp đội hình
+            for (let i = 1; i <= daysInMonth; i++) {
+                summaryMap[empId].days[i] = '';
+            }
+        }
+
+        // 2. Lấy ra cái "ngày" của bản ghi hiện tại (vd: "2026-04-15" -> số 15)
+        const dayNum = new Date(record.work_date).getDate();
+
+        // 3. Quyết định hiển thị gì vào ô ngày đó (Giống form Khải Hưng)
+        if (record.status === 'ABSENT') {
+            summaryMap[empId].days[dayNum] = 'V'; // Vắng
+        } else if (record.status === 'PRESENT' || record.status === 'LATE' || record.status === 'MISSING_OUT') {
+            // Hiển thị công (có thể là 1.0 hoặc số giờ làm thực tế)
+            const workValue = record.net_work_hours;
+            summaryMap[empId].days[dayNum] = workValue;
+            summaryMap[empId].total_work_days += workValue;
+        }
+    });
+
+    return Object.values(summaryMap).sort((a, b) => a.employee_code.localeCompare(b.employee_code));
+};
+
+
+export default { getEmployeeAttendanceByDate, getAllAttendanceSummaryByDate, getEmployeeAttendanceSummaryByMonth, processScanLog, finalizeDailyAttendance, getMonthlySummaryAllEmployees };
