@@ -1,3 +1,4 @@
+import { get } from 'node:http';
 import attendanceService from '../services/attendanceService.js';
 import dateUtils from '../utils/dateUtils.js';
 
@@ -101,9 +102,29 @@ const triggerManualFinalize = async (req, res) => {
     }
 };
 
+const getMonthlySummaryAll = async (req, res) => {
+    try {
+        const currentUser = req.user;
+
+        const month = req.query.month ? parseInt(req.query.month) : new Date().getMonth() + 1;
+        const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+
+        const data = await attendanceService.getMonthlySummaryAllEmployees(month, year);
+
+        return res.status(200).json({
+            success: true,
+            message: `Lấy báo cáo chốt công tháng ${month}/${year} thành công.`,
+            data: data
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export default {
     getMonthlyAttendance,
     getDailySummaryAll,
     getDailyAttendance,
-    triggerManualFinalize
+    triggerManualFinalize,
+    getMonthlySummaryAll
 };

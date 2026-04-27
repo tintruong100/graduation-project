@@ -10,5 +10,6 @@ attendanceRouter.get('/daily-all', verifyManager, attendanceController.getDailyS
 attendanceRouter.post('/trigger-finalize', verifyAdmin, attendanceController.triggerManualFinalize);
 attendanceRouter.get('/daily/:employee_id', verifyEmployee, attendanceController.getDailyAttendance);
 attendanceRouter.get('/monthly/:employee_id', verifyEmployee, attendanceController.getMonthlyAttendance);
+attendanceRouter.get('/monthly-all', verifyManager, attendanceController.getMonthlySummaryAll);
 
 export default attendanceRouter;

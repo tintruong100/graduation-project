@@ -76,3 +76,16 @@ export function useTriggerFinalize() {
         },
     });
 }
+
+// ==========================================
+// 5. HOOK (MUTATION): LẤY BÁO CÁO CÔNG THÁNG (Dùng để xuất Excel)
+// Dùng useMutation vì ta chỉ gọi API khi User chủ động bấm nút
+// ==========================================
+export function useExportMonthlySummary() {
+    return useMutation({
+        mutationFn: ({ month, year }: { month: number; year: number }) =>
+            fetchClient.get<{ data: any[] }>(
+                `/attendance/monthly-all?month=${month}&year=${year}`
+            ),
+    });
+}
