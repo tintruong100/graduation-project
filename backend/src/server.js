@@ -33,6 +33,3 @@ app.listen(port, () => {
     //callback
     console.log(`Backend Nodejs is running at port ${port}`);
 });
-server.listen(8001, () => {
-    console.log("Backend & Socket.IO đang chạy tại port 8001");
-});
