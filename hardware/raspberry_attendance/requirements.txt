@@ -1,0 +1,4 @@
+pyserial
+adafruit-circuitpython-fingerprint
+RPi.GPIO
+python-socketio
