@@ -36,8 +36,8 @@ const remove = async (id) => {
 const create = async (employee_id, finger_name) => {
     if (!employee_id) throw { status: 400, message: 'ID nhân viên là bắt buộc!' };
     if (!finger_name) throw { status: 400, message: 'Tên ngón tay là bắt buộc!' };
-
-    const fingerprintData = await requestPiToScanFingerprint(employee_id, finger_name);
+    const employee_code = await db.Employee.findByPk(employee_id, { attributes: ['employee_code'] });
+    const fingerprintData = await requestPiToScanFingerprint(employee_id, employee_code.employee_code, finger_name);
 
     if (!fingerprintData.success) {
         throw { status: 400, message: 'Quét vân tay trên thiết bị thất bại!', error: fingerprintData.error };
@@ -62,7 +62,7 @@ const getScanLog = async () => {
             { model: db.Employee, as: 'employee', attributes: ['id', 'full_name', 'employee_code'] }
         ],
         order: [['createdAt', 'DESC']],
-        limit: 100,
+        limit: 1000,
         raw: true,
         nest: true
     });

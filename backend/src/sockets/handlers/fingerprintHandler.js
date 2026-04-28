@@ -35,7 +35,7 @@ export const handleFingerprintEvents = (socket, io) => {
  * @returns {Promise<Object>} - Trả về dữ liệu vân tay từ thiết bị
  */
 
-export const requestPiToScanFingerprint = (employee_id, finger_name) => {
+export const requestPiToScanFingerprint = (employee_id, employee_code, finger_name) => {
     return new Promise((resolve, reject) => {
         try {
             const io = getIO();
@@ -58,10 +58,11 @@ export const requestPiToScanFingerprint = (employee_id, finger_name) => {
             // Ra lệnh cho Pi (Không cần truyền response_event nữa)
             io.emit('command_start_register', {
                 employee_id: employee_id,
+                employee_code: employee_code,
                 finger_name: finger_name
             });
 
-            console.log(`[Socket] Đã gửi lệnh yêu cầu quét vân tay cho ID: ${employee_id}`);
+            console.log(`[Socket] Đã gửi lệnh yêu cầu quét vân tay cho ID: ${employee_id}, Mã NV: ${employee_code}`);
 
         } catch (error) {
             reject(new Error(`Lỗi kết nối Socket: ${error.message}`));

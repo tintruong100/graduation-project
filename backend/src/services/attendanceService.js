@@ -199,22 +199,25 @@ const finalizeDailyAttendance = async (targetDateStr) => {
     // 2. Vòng lặp quét kiểm tra từng người
     for (const emp of employees) {
         const mySummary = todaySummaries.find(s => s.employee_id === emp.id);
-        const breakHours = parseFloat(mySummary.breakHours || 1.0);
-        let netHours = mySummary.gross_work_hours - breakHours;
-        if (netHours < 0) netHours = 0;
-        await mySummary.update({ net_work_hours: parseFloat(netHours.toFixed(2)) });
-
         if (!mySummary) {
             // Rẽ nhánh: Không có log nào -> Đánh vắng mặt
             absentCount += await handleAbsentEmployee(emp.id, targetDate);
         } else {
             // Rẽ nhánh: Có log -> Kiểm tra xem có quên quét lúc về không
             missingOutCount += await handleMissingOutEmployee(mySummary);
+            await setNetHoursForSummary(mySummary);
         }
     }
 
     // Nhớ phải có return để in log cho Cronjob biết mà báo cáo lại
     return { targetDate, absentCount, missingOutCount };
+};
+
+const setNetHoursForSummary = async (summary) => {
+    const breakHours = parseFloat(summary.break_hours || 1.0);
+    let netHours = summary.gross_work_hours - breakHours;
+    if (netHours < 0) netHours = 0;
+    await db.AttendanceSummary.update({ net_work_hours: netHours }, { where: { id: summary.id } });
 };
 
 const getMonthlySummaryAllEmployees = async (month, year) => {

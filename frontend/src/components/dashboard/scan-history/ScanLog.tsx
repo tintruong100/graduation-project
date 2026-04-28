@@ -2,14 +2,18 @@
 import { useState } from "react";
 import Image from "next/image";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faTrashCan, faHistory, faClock } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faTrashCan, faHistory, faClock, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { useScanLogs, useDeleteScanLog } from "@/hooks/useScanLogs";
 import type { ScanLog } from "@/types";
 import { useConfirm } from "@/hooks/useConfirm";
 import { Table, type Column } from "@/components/ui/Table";
 
+// IMPORT THÊM TOAST ĐỂ THÔNG BÁO LÀM MỚI
+import toast from "react-hot-toast";
+
 export default function ScanHistoryMgmt() {
-    const { data: scanLogs = [], isLoading: loading } = useScanLogs();
+    // 1. LẤY THÊM HÀM refetch TỪ HOOK
+    const { data: scanLogs = [], isLoading: loading, refetch } = useScanLogs();
     const deleteScanLog = useDeleteScanLog();
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -19,6 +23,13 @@ export default function ScanHistoryMgmt() {
     const [viewData, setViewData] = useState<ScanLog | null>(null);
 
     const { confirm, ConfirmUI } = useConfirm();
+
+    // 2. HÀM XỬ LÝ LÀM MỚI DỮ LIỆU
+    const handleRefresh = async () => {
+        setSearchTerm(""); // Xóa thanh tìm kiếm
+        await refetch();   // Ép tải lại dữ liệu từ Server
+        toast.success("Đã làm mới dữ liệu lịch sử quét!");
+    };
 
     const handleDelete = async (id: string) => {
         const ok = await confirm({
@@ -52,7 +63,7 @@ export default function ScanHistoryMgmt() {
         }
     };
 
-    if (loading) return null; // loading.tsx handles skeleton
+    if (loading && scanLogs.length === 0) return null; // loading.tsx handles skeleton
 
     const scanColumns: Column<ScanLog>[] = [
         {
@@ -102,9 +113,6 @@ export default function ScanHistoryMgmt() {
                     <button onClick={() => openViewModal(log)} className="text-blue-500 hover:text-blue-700 hover:scale-110 transition-all" title="Xem chi tiết">
                         <FontAwesomeIcon icon={faEye} size="lg" />
                     </button>
-                    <button onClick={() => handleDelete(log.id)} className="text-red-500 hover:text-red-700 hover:scale-110 transition-all" title="Xóa dữ liệu">
-                        <FontAwesomeIcon icon={faTrashCan} size="lg" />
-                    </button>
                 </div>
             ),
         },
@@ -123,6 +131,7 @@ export default function ScanHistoryMgmt() {
                         <h3 className="text-xl font-bold text-gray-800">Lịch sử Quét & Chấm công</h3>
                     </div>
 
+                    {/* THANH TÌM KIẾM */}
                     <div className="relative w-full sm:w-72">
                         <input
                             type="text"
@@ -132,6 +141,19 @@ export default function ScanHistoryMgmt() {
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                         />
                     </div>
+
+                    {/* 3. NÚT LÀM MỚI (Thêm vào đây) */}
+                    <button
+                        onClick={handleRefresh}
+                        className="w-full sm:w-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold transition-all flex items-center justify-center gap-2 border border-gray-300 shadow-sm active:scale-95"
+                        title="Xóa bộ lọc và làm mới dữ liệu"
+                    >
+                        <FontAwesomeIcon
+                            icon={faArrowsRotate}
+                            className={`${loading ? "animate-spin" : ""}`}
+                        />
+                        Làm mới
+                    </button>
                 </div>
             </div>
 
@@ -145,7 +167,6 @@ export default function ScanHistoryMgmt() {
             />
 
             {/* MODAL XEM CHI TIẾT */}
-            {/* KHÔI PHỤC LẠI: MODAL XEM CHI TIẾT THEO CHUẨN ĐỒNG BỘ */}
             {isViewModalOpen && viewData && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)}></div>
@@ -169,7 +190,7 @@ export default function ScanHistoryMgmt() {
                                     <span className="col-span-2 text-gray-800 font-semibold">{formatDate(viewData.scan_time)}</span>
                                 </div>
 
-                                {/* Dòng 3: Trạng thái (Thêm vào cho rõ ràng) */}
+                                {/* Dòng 3: Trạng thái */}
                                 <div className="grid grid-cols-3 border-b border-gray-100 pb-3 items-center">
                                     <span className="text-gray-500 font-medium">Trạng thái:</span>
                                     <span className="col-span-2">
@@ -179,14 +200,13 @@ export default function ScanHistoryMgmt() {
                                     </span>
                                 </div>
 
-                                {/* Dòng 4: Hình ảnh (Thiết kế dạng khối giống textarea) */}
+                                {/* Dòng 4: Hình ảnh */}
                                 <div className="flex flex-col border-b border-gray-100 pb-3">
                                     <span className="text-gray-500 font-medium mb-3">Hình ảnh chụp lại:</span>
                                     <div className="w-full min-h-[200px] border border-gray-200 bg-gray-50 rounded p-2 flex items-center justify-center">
                                         {viewData.image_path ? (
                                             <div className="relative w-full max-h-[280px] flex items-center justify-center">
                                                 <Image
-                                                    // Nếu url đã có http thì dùng luôn, chưa có thì ghép với domain backend
                                                     src={viewData.image_path.startsWith('http') ? viewData.image_path : `http://localhost:8000${viewData.image_path}`}
                                                     alt="Ảnh chấm công"
                                                     width={400}
