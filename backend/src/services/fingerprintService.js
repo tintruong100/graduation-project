@@ -62,7 +62,7 @@ const getScanLog = async () => {
             { model: db.Employee, as: 'employee', attributes: ['id', 'full_name', 'employee_code'] }
         ],
         order: [['createdAt', 'DESC']],
-        limit: 100,
+        limit: 1000,
         raw: true,
         nest: true
     });
