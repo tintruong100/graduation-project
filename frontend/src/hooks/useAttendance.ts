@@ -84,7 +84,7 @@ export function useTriggerFinalize() {
 export function useExportMonthlySummary() {
     return useMutation({
         mutationFn: ({ month, year }: { month: number; year: number }) =>
-            fetchClient.get<{ data: any[] }>(
+            fetchClient.get<any[]>(
                 `/attendance/monthly-all?month=${month}&year=${year}`
             ),
     });
