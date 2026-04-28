@@ -4,6 +4,7 @@ import path from 'path';
 import fileUtils from '../../utils/fileUtils.js';
 import fingerprintService from '../../services/fingerprintService.js';
 import attendanceService from '../../services/attendanceService.js';
+import { uploadBase64ToCloudinary } from '../../utils/cloudinaryUpload.js';
 
 export const handleAttendanceEvents = (socket, io) => {
 
@@ -19,11 +20,11 @@ export const handleAttendanceEvents = (socket, io) => {
         const dbStatus = isUnknown ? 'FAILED' : 'SUCCESS';
 
         try {
-            const savedImagePath = fileUtils.saveImageFromBase64(data.employee_code, data.image_data);
+            const imageURL = await uploadBase64ToCloudinary(data.image_data, 'attendance_logs');
             await fingerprintService.createScanLog({
                 employee_id: dbEmployeeId,
                 scan_time: data.scan_time,
-                image_path: savedImagePath,
+                image_path: imageURL,
                 status: dbStatus
             });
             const result = await attendanceService.processScanLog(data.employee_id, data.scan_time);
@@ -49,12 +50,12 @@ export const handleAttendanceEvents = (socket, io) => {
             const dbStatus = isUnknown ? 'FAILED' : 'SUCCESS';
 
             try {
-                const savedImagePath = fileUtils.saveImageFromBase64(log.employee_id, log.image_data);
+                const imageURL = await uploadBase64ToCloudinary(log.image_data, 'attendance_logs');
 
                 await fingerprintService.createScanLog({
                     employee_id: dbEmployeeId,
                     scan_time: log.scan_time,
-                    image_path: savedImagePath,
+                    image_path: imageURL,
                     status: dbStatus
                 });
 
