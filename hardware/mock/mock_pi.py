@@ -205,6 +205,7 @@ def process_mock_attendance(sensor_id):
     log_data = {
         'sensor_id': sensor_id,
         'employee_id': emp_id,
+        'employee_code': emp_code,
         'scan_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
