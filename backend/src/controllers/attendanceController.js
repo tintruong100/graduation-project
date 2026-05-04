@@ -98,7 +98,11 @@ const triggerManualFinalize = async (req, res) => {
             data: result
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: 'Lỗi khi chốt sổ!', error: error.message });
+        const status = error.status || 500;
+        return res.status(status).json({
+            success: false,
+            message: error.message || 'Lỗi khi chốt sổ!',
+        });
     }
 };
 
@@ -117,7 +121,11 @@ const getMonthlySummaryAll = async (req, res) => {
             data: data
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        const status = error.status || 500;
+        return res.status(status).json({
+            success: false,
+            message: error.message || 'Lỗi server!',
+        });
     }
 };
 
