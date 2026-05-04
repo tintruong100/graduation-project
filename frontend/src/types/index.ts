@@ -142,8 +142,6 @@ export interface Fingerprint {
   createdAt?: string;
 }
 
-// src/types/index.ts
-
 export interface AttendanceSummary {
   id: string;
   employee_id: string;
@@ -169,5 +167,25 @@ export interface AttendanceSummary {
       id: string;
       name: string;
     }
+  };
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────
+export interface DashboardSummary {
+  today: {
+    total: number;
+    active: number;
+    department_count: number;
+    male_count: number;
+    female_count: number;
+    present: number;
+    late: number;
+    absent: number;
+    missing_out: number;
+  };
+  recent_scans: ScanLog[];
+  device_status: {
+    is_online: boolean;
+    last_active: string | null;
   };
 }
