@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import { handleAttendanceEvents } from "./handlers/attendanceHandler";
 import { handleFingerprintEvents } from "./handlers/fingerprintHandler";
+import socketAuthMiddleware from "../middlewares/socketAuth";
 
 // Biến toàn cục lưu trữ io để các API khác có thể sử dụng
 let ioInstance;
@@ -16,6 +17,7 @@ const initSocketIO = (server) => {
     });
 
     ioInstance = io; // Lưu lại io vừa khởi tạo
+    io.use(socketAuthMiddleware);
 
     io.on('connection', (socket) => {
         global.piStatus = {
