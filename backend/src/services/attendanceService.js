@@ -177,7 +177,7 @@ const handleMissingOutEmployee = async (summary) => {
 
     // Nếu thời gian quét vào = thời gian quét ra -> Chỉ quét 1 lần
     if (firstTime === lastTime && summary.status !== 'ABSENT') {
-        await summary.update({ status: 'MISSING_OUT' });
+        await db.AttendanceSummary.update({ status: 'MISSING_OUT' }, { where: { id: summary.id } });
         return 1; // Trả về 1 để cộng vào bộ đếm missingOutCount
     }
     return 0;
