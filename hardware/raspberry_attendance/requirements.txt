@@ -2,3 +2,4 @@ pyserial
 adafruit-circuitpython-fingerprint
 RPi.GPIO
 python-socketio
+python-dotenv
