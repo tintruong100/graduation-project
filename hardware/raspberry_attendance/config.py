@@ -1,4 +1,8 @@
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -12,7 +16,8 @@ PIN_BUZ = 23
 PIN_TCH = 18
 RELAY_PIN = 24
 
-SERVER_URL = "https://graduation-project-siuu.onrender.com"
+SERVER_URL = os.getenv("SERVER_URL")
+PI_SECRET_KEY = os.getenv("PI_SECRET_KEY")
 
 FILE_EMPLOYEES = DATA_DIR / "local_employees.json"
 FILE_OFFLINE_LOGS = DATA_DIR / "offline_attendance.json"

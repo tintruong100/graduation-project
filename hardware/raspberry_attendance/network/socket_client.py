@@ -6,7 +6,7 @@ import threading
 import socketio
 import adafruit_fingerprint
 
-from config import SERVER_URL, FILE_EMPLOYEES
+from config import SERVER_URL, FILE_EMPLOYEES, PI_SECRET_KEY
 from hardware.lcd import display_message
 from storage.local_db import load_local_employees, sync_offline_logs, save_offline_log
 from hardware.indicators import turn_off_all, success_signal, fail_signal
@@ -104,4 +104,4 @@ def on_delete_fingerprint(data):
 def connect_socket(finger):
     global finger_instance
     finger_instance = finger
-    sio.connect(SERVER_URL)
+    sio.connect(SERVER_URL, auth={"token": PI_SECRET_KEY})
