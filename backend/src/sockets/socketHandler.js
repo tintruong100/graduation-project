@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import { handleAttendanceEvents } from "./handlers/attendanceHandler";
 import { handleFingerprintEvents } from "./handlers/fingerprintHandler";
+import { handleAlertEvents } from "./handlers/alertHandler";
 import socketAuthMiddleware from "../middlewares/socketAuth";
 
 // Biến toàn cục lưu trữ io để các API khác có thể sử dụng
@@ -29,6 +30,7 @@ const initSocketIO = (server) => {
         // Gắn các module xử lý vào, truyền socket vào cho chúng làm việc
         handleAttendanceEvents(socket, io);
         handleFingerprintEvents(socket, io);
+        handleAlertEvents(socket, io);
 
         socket.on('disconnect', () => {
             global.piStatus = {
