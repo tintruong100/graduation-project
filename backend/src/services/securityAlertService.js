@@ -42,6 +42,13 @@ const securityAlertService = {
             console.error("❌ [Service] Lỗi khi đồng bộ hàng loạt cảnh báo:", error);
             throw error;
         }
+    },
+
+    getAllAlerts: async () => {
+        const alerts = await db.SecurityAlert.findAll({
+            order: [['created_at', 'DESC']]
+        });
+        return alerts;
     }
 };
 
