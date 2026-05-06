@@ -1,5 +1,4 @@
 import base64
-import json
 import os
 import time
 import adafruit_fingerprint
@@ -9,7 +8,7 @@ SCAN_COOLDOWN = 5  # giây
 
 from hardware.camera import capture_image
 from hardware.indicators import late_over30_signal, success_signal, fail_signal, late30_signal, open_door_signal
-from storage.local_db import get_employee_by_sensor_id, save_offline_log
+from storage.local_db import get_employee_by_sensor_id, save_offline_log, toggle_person_in_office
 # from network.socket_client import enqueue_attendance
 from storage.local_db import register_checkin
 from datetime import datetime
@@ -93,6 +92,7 @@ def check_attendance(finger, sio):
             
             bao_trang_thai(emp_info, emp_start_time, scan_time)
             open_door_signal(emp_code)
+            toggle_person_in_office(emp_code)
 
             log_data = {
                 "sensor_id": sensor_id,

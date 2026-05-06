@@ -1,2 +1,15 @@
 data
 .env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.json
+*.csv
+*.h5
+*.pt
+*.ckpt
+*.tar

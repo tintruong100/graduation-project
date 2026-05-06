@@ -2,9 +2,8 @@ import base64
 import json
 import os
 
-from config import FILE_EMPLOYEES, FILE_OFFLINE_LOGS
+from config import FILE_EMPLOYEES, FILE_OFFLINE_ALERTS, FILE_OFFLINE_LOGS, CHECKIN_FILE, IN_OFFICE_FILE
 from datetime import date
-from config import CHECKIN_FILE
 
 
 def _ensure_parent(path):
@@ -116,3 +115,82 @@ def register_checkin(emp_info):
     records.append(new_item)
     save_checkin_db(db)
     return True, new_item
+
+def toggle_person_in_office(employee_code):
+    """
+    Quét lần đầu thêm vào file json, quét lần tiếp theo xóa khỏi file json.
+    """
+    _ensure_parent(IN_OFFICE_FILE)
+    
+    people = []
+    # Đọc dữ liệu nếu file đã tồn tại
+    if IN_OFFICE_FILE.exists():
+        try:
+            with open(IN_OFFICE_FILE, "r", encoding="utf-8") as f:
+                people = json.load(f)
+        except Exception:
+            # Xử lý trường hợp file rỗng hoặc lỗi format
+            people = []
+
+    # Kiểm tra và thêm/xóa nhân viên
+    if employee_code in people:
+        people.remove(employee_code)
+        print(f"[Local DB] {employee_code} đã RỜI KHỎI văn phòng.")
+    else:
+        people.append(employee_code)
+        print(f"[Local DB] {employee_code} đã VÀO văn phòng.")
+
+    # Ghi đè lại mảng vào file JSON
+    with open(IN_OFFICE_FILE, "w", encoding="utf-8") as f:
+        json.dump(people, f, ensure_ascii=False, indent=4)
+
+def get_people_in_office_count():
+    """
+    Trả về số lượng người hiện đang có trong văn phòng từ file json.
+    """
+    if not IN_OFFICE_FILE.exists():
+        return 0
+    try:
+        with open(IN_OFFICE_FILE, "r", encoding="utf-8") as f:
+            people = json.load(f)
+        return len(people)
+    except Exception:
+        return 0
+    
+
+def save_offline_alert(alert_data):
+    """Lưu cảnh báo vào file json khi không có mạng"""
+    logs = []
+    if FILE_OFFLINE_ALERTS.exists():
+        try:
+            with open(FILE_OFFLINE_ALERTS, "r", encoding="utf-8") as f:
+                logs = json.load(f)
+        except Exception:
+            logs = []
+            
+    logs.append(alert_data)
+    _ensure_parent(FILE_OFFLINE_ALERTS)
+    with open(FILE_OFFLINE_ALERTS, "w", encoding="utf-8") as f:
+        json.dump(logs, f, ensure_ascii=False, indent=4)
+    print(f"  [Offline] Đã lưu cảnh báo an ninh lúc {alert_data.get('timestamp')}.")
+
+def sync_offline_alerts(sio):
+    """Đồng bộ các cảnh báo offline lên server khi có mạng lại"""
+    if not FILE_OFFLINE_ALERTS.exists():
+        return
+        
+    try:
+        with open(FILE_OFFLINE_ALERTS, "r", encoding="utf-8") as f:
+            logs = json.load(f)
+            
+        if len(logs) > 0:
+            print(f"  [Sync] Đang đẩy {len(logs)} cảnh báo an ninh offline lên Server...")
+            
+            # Đẩy mảng logs lên server với một event riêng biệt
+            sio.emit("sync_offline_alerts", logs)
+            
+            # Làm rỗng file sau khi đẩy xong
+            with open(FILE_OFFLINE_ALERTS, "w", encoding="utf-8") as f:
+                json.dump([], f)
+    except Exception as e:
+        print(f"Lỗi khi đọc file offline alerts: {e}")
