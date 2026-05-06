@@ -5,6 +5,7 @@ import queue
 import threading
 import socketio
 import adafruit_fingerprint
+from datetime import datetime
 
 from config import SERVER_URL, FILE_EMPLOYEES, PI_SECRET_KEY
 from hardware.lcd import display_message

@@ -9,6 +9,7 @@ from core.attendance import check_attendance
 from network.socket_client import sio, task_queue, connect_socket
 from hardware.lcd import initialize_lcd, display_message, clean_lcd, display_wait_for_scan
 from hardware.indicators import success_signal, fail_signal, late30_signal, late_over30_signal
+from core.office_tracker import start_office_monitor
 
 
 def main():
@@ -17,6 +18,7 @@ def main():
 
     finger = init_fingerprint()
     initialize_lcd()
+    start_office_monitor()
     
 
     try:

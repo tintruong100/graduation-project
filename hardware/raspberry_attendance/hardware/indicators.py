@@ -79,3 +79,10 @@ def beep_twice():
         time.sleep(0.15)
         GPIO.output(PIN_BUZ, GPIO.LOW)
         time.sleep(0.1)
+
+def warning_signal():
+    turn_off_all()
+    GPIO.output(PIN_R, GPIO.LOW) 
+    GPIO.output(PIN_B, GPIO.LOW) 
+    beep_twice()
+    turn_off_all()
