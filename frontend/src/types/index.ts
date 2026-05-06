@@ -182,6 +182,7 @@ export interface DashboardSummary {
     late: number;
     absent: number;
     missing_out: number;
+    alert_count: number;
   };
   recent_scans: ScanLog[];
   device_status: {
