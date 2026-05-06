@@ -6,7 +6,8 @@ import { useDashboardSummary } from "@/hooks/useDashboard";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faUsers, faChartPie, faUserPlus, faFingerprint,
-    faFileCircleExclamation, faWifi, faUserClock, faUserCheck, faBuilding, faClipboardList
+    faFileCircleExclamation, faWifi, faUserClock, faUserCheck, faBuilding, faClipboardList,
+    faTriangleExclamation
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function OverviewDashboard() {
@@ -87,21 +88,29 @@ export default function OverviewDashboard() {
                 </Link>
 
                 {/* Thẻ 4 (Tỷ lệ Giới tính) -> Bấm vào ra Danh sách nhân viên */}
-                <Link href="/dashboard/employees" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 hover:border-indigo-200 transition-all cursor-pointer group">
-                    <div className="w-full">
-                        <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1 group-hover:text-indigo-500 transition-colors">Nam / Nữ</p>
-                        <h3 className="text-2xl font-black text-gray-800 mb-2">
-                            {today.male_count} <span className="text-gray-300 mx-1">/</span> {today.female_count}
+                <Link href="/dashboard/security-alert" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 hover:border-yellow-400 transition-all cursor-pointer group">
+                    <div>
+                        <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1 group-hover:text-yellow-500 transition-colors">
+                            Cảnh Báo An Ninh
+                        </p>
+                        <h3 className="text-3xl font-black text-gray-800">
+                            {today.alert_count}
                         </h3>
-                        <div className="w-full h-2 bg-pink-100 rounded-full overflow-hidden flex">
-                            <div
-                                className="h-full bg-blue-500"
-                                style={{ width: `${today.total ? (today.male_count / today.total) * 100 : 0}%` }}
-                            ></div>
-                        </div>
+
+                        {/* Render điều kiện: 0 thì an toàn, > 0 thì báo động */}
+                        {today.alert_count === 0 ? (
+                            <p className="text-xs text-green-600 font-bold mt-2 bg-green-50 inline-block px-2 py-1 rounded-md">
+                                ✅ An toàn
+                            </p>
+                        ) : (
+                            <p className="text-xs text-red-600 font-bold mt-2 bg-red-50 inline-block px-2 py-1 rounded-md animate-pulse">
+                                ⚠️ Cảnh báo có người lạ!
+                            </p>
+                        )}
                     </div>
-                    <div className="w-14 h-14 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center text-2xl ml-4 shrink-0 group-hover:scale-110 transition-transform">
-                        <FontAwesomeIcon icon={faChartPie} />
+
+                    <div className="w-14 h-14 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition-transform">
+                        <FontAwesomeIcon icon={faTriangleExclamation} />
                     </div>
                 </Link>
 

@@ -5,6 +5,7 @@ import departmentRouter from './departmentRoutes.js';
 import fingerprintRouter from './fingerprintRoutes.js';
 import attendanceRoutes from './attendanceRoute.js';
 import dashboardRouter from './dashboardRoute.js';
+import securityAlertRouter from './securityAlertRoute.js';
 
 let router = express.Router();
 
@@ -26,6 +27,9 @@ let initWebRoutes = (app) => {
 
     // Dashboard Routes
     app.use('/api/v1/dashboard', dashboardRouter);
+
+    // Security Alert Routes
+    app.use('/api/v1/security-alerts', securityAlertRouter);
 
     return app.use("/", router);
 }

@@ -190,12 +190,11 @@ export default function FingerprintMgmt() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
                     <div className="flex items-center gap-3 mr-4">
-                        <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                        <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
                             <FontAwesomeIcon icon={faFingerprint} size="lg" />
                         </div>
                         <h3 className="text-xl font-bold text-gray-800">Quản lý Vân tay</h3>
                     </div>
-
                     <div className="relative w-full sm:w-72">
                         <input
                             type="text"

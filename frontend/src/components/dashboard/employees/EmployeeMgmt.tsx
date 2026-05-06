@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthStore } from "@/store/auth.store";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faPenToSquare, faPeopleGroup, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import {
   useEmployees,
   useEmployeesByDepartment,
@@ -277,7 +277,12 @@ export default function EmployeeMgmt() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full md:w-auto">
-          <h3 className="text-xl font-bold text-gray-800 mr-4">Nhân sự</h3>
+          <div className="flex items-center gap-3 mr-4">
+            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+              <FontAwesomeIcon icon={faPeopleGroup} size="lg" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Nhân Sự</h3>
+          </div>
 
           <div className="relative w-full sm:w-64">
             <input

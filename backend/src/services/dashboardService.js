@@ -61,6 +61,14 @@ const getDashboardSummaryData = async () => {
         last_active: null
     };
 
+    const todayAlertCount = await db.SecurityAlert.count({
+        where: db.sequelize.where(
+            db.sequelize.fn('DATE', db.sequelize.col('created_at')),
+            '=',
+            todayStr
+        )
+    });
+
     // 5. ĐÓNG GÓI DỮ LIỆU
     return {
         today: {
@@ -72,7 +80,8 @@ const getDashboardSummaryData = async () => {
             present: present,
             late: late,
             absent: totalAbsentToday,
-            missing_out: missingOut
+            missing_out: missingOut,
+            alert_count: todayAlertCount
         },
         recent_scans: recentScans,
         device_status: piStatus // <-- Gắn trạng thái thật vào đây

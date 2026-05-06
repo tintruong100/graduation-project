@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { useEmployees } from "@/hooks/useEmployees";
 import { departmentSchema, type DepartmentFormValues } from "@/validations/department.schema";
@@ -163,7 +163,12 @@ export default function DepartmentMgmt() {
     <div className="p-4">
       {ConfirmUI}
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-gray-800">Cơ cấu Phòng ban</h3>
+        <div className="flex items-center gap-3 mr-4">
+          <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+            <FontAwesomeIcon icon={faBuilding} size="lg" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-800">Cơ Cấu Phòng Ban</h3>
+        </div>
         <button onClick={openAddModal} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-md active:scale-95">
           + Thêm phòng ban
         </button>
