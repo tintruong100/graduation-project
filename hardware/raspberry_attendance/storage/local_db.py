@@ -2,7 +2,7 @@ import base64
 import json
 import os
 
-from config import FILE_EMPLOYEES, FILE_OFFLINE_LOGS, CHECKIN_FILE, IN_OFFICE_FILE
+from config import FILE_EMPLOYEES, FILE_OFFLINE_ALERTS, FILE_OFFLINE_LOGS, CHECKIN_FILE, IN_OFFICE_FILE
 from datetime import date
 
 
@@ -156,3 +156,41 @@ def get_people_in_office_count():
         return len(people)
     except Exception:
         return 0
+    
+
+def save_offline_alert(alert_data):
+    """Lưu cảnh báo vào file json khi không có mạng"""
+    logs = []
+    if FILE_OFFLINE_ALERTS.exists():
+        try:
+            with open(FILE_OFFLINE_ALERTS, "r", encoding="utf-8") as f:
+                logs = json.load(f)
+        except Exception:
+            logs = []
+            
+    logs.append(alert_data)
+    _ensure_parent(FILE_OFFLINE_ALERTS)
+    with open(FILE_OFFLINE_ALERTS, "w", encoding="utf-8") as f:
+        json.dump(logs, f, ensure_ascii=False, indent=4)
+    print(f"  [Offline] Đã lưu cảnh báo an ninh lúc {alert_data.get('timestamp')}.")
+
+def sync_offline_alerts(sio):
+    """Đồng bộ các cảnh báo offline lên server khi có mạng lại"""
+    if not FILE_OFFLINE_ALERTS.exists():
+        return
+        
+    try:
+        with open(FILE_OFFLINE_ALERTS, "r", encoding="utf-8") as f:
+            logs = json.load(f)
+            
+        if len(logs) > 0:
+            print(f"  [Sync] Đang đẩy {len(logs)} cảnh báo an ninh offline lên Server...")
+            
+            # Đẩy mảng logs lên server với một event riêng biệt
+            sio.emit("sync_offline_alerts", logs)
+            
+            # Làm rỗng file sau khi đẩy xong
+            with open(FILE_OFFLINE_ALERTS, "w", encoding="utf-8") as f:
+                json.dump([], f)
+    except Exception as e:
+        print(f"Lỗi khi đọc file offline alerts: {e}")

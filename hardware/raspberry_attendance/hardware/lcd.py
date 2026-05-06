@@ -16,16 +16,10 @@ def clean_lcd():
         lcd.clear()
 
 def display_message(line1, line2):
-    """
-    Hiển thị thông báo bất kỳ (ví dụ: lỗi, báo thành công, cảnh báo PIR).
-    """
     global _is_waiting_screen, _last_time_str
-    
-    # Đánh dấu màn hình đang hiển thị thông báo khác, không phải màn hình chờ
     _is_waiting_screen = False
-    _last_time_str = ""  # Reset thời gian để lần sau quay lại màn hình chờ chắc chắn sẽ in
+    _last_time_str = ""
     lcd.clear()
-    
     lcd.cursor_pos = (0, 0)
     lcd.write_string(line1)
     lcd.cursor_pos = (1, 0)
@@ -42,7 +36,8 @@ def display_wait_for_scan():
     
     # Chỉ ra lệnh ghi lên màn hình nếu thời gian đã đổi HOẶC màn hình vừa hiển thị message khác
     if time_now != _last_time_str or not _is_waiting_screen:
-        time.sleep(1) 
+        time.sleep(1)
+        lcd.clear() 
         lcd.cursor_pos = (0, 0)
         lcd.write_string(time_now)
         

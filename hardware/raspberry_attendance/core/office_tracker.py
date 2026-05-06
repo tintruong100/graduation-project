@@ -5,6 +5,7 @@ from hardware.pir import init_pir, is_motion_detected, turn_on_pir_led, turn_off
 from hardware.indicators import warning_signal
 from hardware.lcd import display_message
 from config import ARLERT_DURATION
+from network.socket_client import emit_intruder_alert
 
 last_empty_time = None
 
@@ -18,7 +19,7 @@ def monitor_pir_sensor():
     is_checking_continuously = False
 
     while True:
-        time.sleep(2)  # Kiểm tra mỗi 2 giây để đảm bảo tính liên tục và nhạy bén
+        time.sleep(2.5)  # Kiểm tra mỗi 3 giây để đảm bảo tính liên tục và nhạy bén
         
         # Đếm số người hiện tại trong file JSON
         people_count = get_people_in_office_count()
@@ -39,6 +40,7 @@ def monitor_pir_sensor():
                 # Lúc này đang ở chế độ liên tục -> Kiểm tra cảm biến
                 if is_motion_detected():
                     print("[CẢNH BÁO] Phát hiện có người nhưng file trống!")
+                    emit_intruder_alert()
                     display_message("WARNING!", "Motion Detected!")
                     warning_signal()  # Gọi tín hiệu báo lỗi
                     # Không reset last_empty_time để nó tiếp tục hú nếu người đó không chịu quẹt vân tay

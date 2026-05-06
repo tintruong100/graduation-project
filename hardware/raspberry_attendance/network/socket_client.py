@@ -9,7 +9,7 @@ from datetime import datetime
 
 from config import SERVER_URL, FILE_EMPLOYEES, PI_SECRET_KEY
 from hardware.lcd import display_message
-from storage.local_db import load_local_employees, sync_offline_logs, save_offline_log
+from storage.local_db import load_local_employees, sync_offline_logs, save_offline_log, save_offline_alert, sync_offline_alerts
 from hardware.indicators import turn_off_all, success_signal, fail_signal
 
 sio = socketio.Client()
@@ -41,6 +41,7 @@ def connect():
     print("\n✅ Đã kết nối Socket.IO tới Server!")
     sio.emit("request_sync_data")
     sync_offline_logs(sio)
+    sync_offline_alerts(sio)
     display_message("ONLINE MODE", "")
     success_signal()
 
@@ -106,3 +107,21 @@ def connect_socket(finger):
     global finger_instance
     finger_instance = finger
     sio.connect(SERVER_URL, auth={"token": PI_SECRET_KEY})
+
+def emit_intruder_alert():
+    """Gửi sự kiện cảnh báo hoặc lưu offline nếu mất mạng."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    alert_payload = {
+        "alert_type": "INTRUDER_DETECTED",
+        "message": "Phát hiện chuyển động khi văn phòng đang trống!",
+        "device_id": "PI_MAIN_OFFICE",
+        "timestamp": timestamp
+    }
+    
+    if sio.connected:
+        sio.emit("intruder_alert", alert_payload)
+        print(f"[Socket] Đã gửi cảnh báo ĐỘT NHẬP lên Server lúc {timestamp}")
+    else:
+        print("[Socket] Mất mạng! Chuyển sang lưu cảnh báo offline.")
+        save_offline_alert(alert_payload) # Gọi hàm lưu offline
