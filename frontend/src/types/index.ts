@@ -189,3 +189,17 @@ export interface DashboardSummary {
     last_active: string | null;
   };
 }
+
+// ─── Security / Alert ────────────────────────────────────────────────────────
+export type AlertStatus = "UNREAD" | "ACKNOWLEDGED" | "RESOLVED";
+
+export interface SecurityAlert {
+  id: string;
+  alert_type: string;
+  message: string;
+  device_id: string;
+  status: AlertStatus;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+}

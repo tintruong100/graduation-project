@@ -9,6 +9,7 @@ import {
     faPeopleGroup, faBuilding, faUser, faBars, faXmark,
     faMagnifyingGlassChart, faCalendarCheck, faClipboardUser,
     faClockRotateLeft, faFingerprint, faChevronLeft, faChevronRight,
+    faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import UserProfile from "@/components/layout/UserProfile";
 
@@ -61,7 +62,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (user?.role === "ADMIN") {
         menuItems.push(
             { id: "fingerprints", label: "Vân tay", path: "/dashboard/fingerprints", icon: faFingerprint },
-            { id: "scan-history", label: "Lịch sử quét", path: "/dashboard/scan-history", icon: faClockRotateLeft }
+            { id: "scan-history", label: "Lịch sử quét", path: "/dashboard/scan-history", icon: faClockRotateLeft },
+            { id: "security-alerts", label: "Cảnh báo an ninh", path: "/dashboard/security-alert", icon: faExclamationTriangle },
         );
     }
 
