@@ -4,7 +4,7 @@ import time
 import adafruit_fingerprint
 
 LAST_SCAN = {}
-SCAN_COOLDOWN = 5  # giây
+SCAN_COOLDOWN = 30  # giây
 
 from hardware.camera import capture_image
 from hardware.indicators import late_over30_signal, success_signal, fail_signal, late30_signal, open_door_signal
@@ -86,6 +86,7 @@ def check_attendance(finger, sio):
             if is_duplicate_scan(emp_id):
                 print("⚠️ Bỏ qua: Quét trùng trong thời gian ngắn")
                 display_message("SPAM WARNING!", "Try again later")
+                fail_signal()
                 return
 
             image_filepath = capture_image(sensor_id)
