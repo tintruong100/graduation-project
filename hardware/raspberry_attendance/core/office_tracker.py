@@ -42,7 +42,8 @@ def monitor_pir_sensor():
                     print("[CẢNH BÁO] Phát hiện có người nhưng file trống!")
                     emit_intruder_alert()
                     display_message("WARNING!", "Motion Detected!")
-                    warning_signal()  # Gọi tín hiệu báo lỗi
+                    for i in range(5):  # Hú liên tục trong 5 lần
+                        warning_signal()  # Gọi tín hiệu báo lỗi
                     # Không reset last_empty_time để nó tiếp tục hú nếu người đó không chịu quẹt vân tay
 
         else:
