@@ -3,6 +3,8 @@ import { handleAttendanceEvents } from "./handlers/attendanceHandler";
 import { handleFingerprintEvents } from "./handlers/fingerprintHandler";
 import { handleAlertEvents } from "./handlers/alertHandler";
 import socketAuthMiddleware from "../middlewares/socketAuth";
+import { instrument } from "@socket.io/admin-ui";
+require('dotenv').config();
 
 // Biến toàn cục lưu trữ io để các API khác có thể sử dụng
 let ioInstance;
@@ -13,12 +15,30 @@ global.piStatus = {
 };
 
 const initSocketIO = (server) => {
+    const FRONTEND_URL = process.env.FRONTEND_URL;
     const io = new Server(server, {
-        cors: { origin: '*', methods: ["GET", "POST"] }
+        cors: {
+            origin: [
+                "https://admin.socket.io",
+                FRONTEND_URL
+            ].filter(Boolean),
+            methods: ["GET", "POST"],
+            credentials: true
+        }
+    });
+
+    instrument(io, {
+        auth: {
+            type: "basic",
+            username: process.env.ADMIN_UI_USERNAME || "admin",
+            password: process.env.ADMIN_UI_PASSWORD_HASH
+        },
+        mode: "development",
     });
 
     ioInstance = io; // Lưu lại io vừa khởi tạo
     io.use(socketAuthMiddleware);
+
 
     io.on('connection', (socket) => {
         global.piStatus = {
