@@ -67,6 +67,7 @@ def is_duplicate_scan(employee_id):
 
 def check_attendance(finger, sio):
     """Hàm chấm công chính"""
+    start_process_time = time.perf_counter()
     if finger.get_image() == adafruit_fingerprint.OK:
         if finger.image_2_tz(1) != adafruit_fingerprint.OK:
             return
@@ -87,6 +88,8 @@ def check_attendance(finger, sio):
                 print("⚠️ Bỏ qua: Quét trùng trong thời gian ngắn")
                 display_message("SPAM WARNING!", "Try again later")
                 fail_signal()
+                total_time = time.perf_counter() - start_process_time
+                print(f"⏱️ [Hiệu năng - Từ chối] Đã chặn hành vi spam. Thời gian xử lý: {total_time:.2f} giây")
                 return
 
             image_filepath = capture_image(sensor_id)
@@ -118,7 +121,12 @@ def check_attendance(finger, sio):
                 log_data["image_path"] = image_filepath
                 save_offline_log(log_data)
                 print("💾 Mất mạng: Đã lưu lịch sử và GIỮ LẠI FILE ẢNH chờ đồng bộ.")
+
+            total_time = time.perf_counter() - start_process_time
+            print(f"⏱️ [Hiệu năng - Thành công] Tổng thời gian từ lúc quét -> Mở cửa -> Gửi mạng: {total_time:.2f} giây")
         else:
             print("❌ KHÔNG TRÙNG KHỚP!")
             display_message("NOT RECOGNIZED", "Try again")
             fail_signal()
+            total_time = time.perf_counter() - start_process_time
+            print(f"⏱️ [Hiệu năng - Từ chối] Báo lỗi sai vân tay. Thời gian phản hồi: {total_time:.2f} giây")
